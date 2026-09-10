@@ -14,7 +14,11 @@ from __future__ import annotations
 
 import logging
 
-from app.detection.regex_cl import RawItem
+from app.detection.regex_cl import (
+    RawItem,
+    recortar_nombre_de_persona,
+    tiene_nombre_y_apellido,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +113,7 @@ def spacy_status() -> dict:
         return {"disponible": False, "motivo": str(error)}
 
 
-def detect_spacy(texto: str) -> list[RawItem]:
+def detect_spacy(texto: str, sensibilidad: str = "exhaustiva") -> list[RawItem]:
     """Devuelve las entidades reconocidas por el modelo de lenguaje."""
     nlp = _obtener_nlp()
 
@@ -121,20 +125,50 @@ def detect_spacy(texto: str) -> list[RawItem]:
 
     from app.detection.filters import is_valid_detection
 
+    # En el nivel de sensibilidad preciso, lo que aporta el modelo se somete a
+    # los mismos requisitos que las reglas. De otro modo el ajuste no diría la
+    # verdad: la interfaz ofrece menos falsos positivos y el modelo seguiría
+    # proponiendo los suyos.
+    procedencia = "regla" if sensibilidad == "precisa" else "modelo"
+
     for entidad in documento.ents:
         categoria = MAPA_ETIQUETAS.get(entidad.label_)
         if not categoria:
             continue
-        if not is_valid_detection(categoria, entidad.text, texto, entidad.start_char):
+
+        superficie = entidad.text
+        inicio = entidad.start_char
+
+        if categoria == "PERSONA":
+            # El modelo suele incluir en la entidad el tratamiento que precede
+            # al nombre y el sufijo societario que lo sigue. Ninguno de los dos
+            # es un dato personal.
+            superficie, desplazamiento = recortar_nombre_de_persona(superficie)
+            inicio += desplazamiento
+            if len(superficie) < 3:
+                continue
+            # El nivel preciso exige el mismo respaldo que a las reglas: un
+            # nombre de pila y un apellido presentes en el catálogo.
+            if procedencia == "regla" and not tiene_nombre_y_apellido(superficie):
+                continue
+
+        if not is_valid_detection(
+            categoria, superficie, texto, inicio, procedencia=procedencia
+        ):
             continue
+
         items.append(
             RawItem(
                 cat=categoria,
-                original=entidad.text,
-                start=entidad.start_char,
-                end=entidad.end_char,
+                original=superficie,
+                start=inicio,
+                end=inicio + len(superficie),
                 source_layer="spacy",
                 score=0.75,
+                # La clasificación del modelo cuenta como evidencia propia: sin
+                # esto, la resolución de solapamientos relegaría siempre sus
+                # menciones frente a las de las reglas.
+                etiquetado=True,
             )
         )
 

@@ -85,6 +85,16 @@ python -m spacy download es_core_news_md
 Advertencia de licencia: el modelo `es_core_news_md` se distribuye bajo GPL-3.0
 y no forma parte de este repositorio.
 
+Qué aporta en concreto: reconoce nombres que ninguna regla puede alcanzar,
+porque aparecen sin tratamiento, sin rol procesal y sin RUT contiguo, y con
+apellidos ausentes del catálogo. La aplicación no le vuelve a exigir el
+respaldo del diccionario —hacerlo la dejaría sin utilidad—, salvo en el nivel
+de sensibilidad «Precisa», donde se le aplican los mismos requisitos que a las
+reglas para que ese ajuste diga la verdad.
+
+Las pruebas de `tests/test_capa_lenguaje.py` verifican su aporte y se omiten
+solas cuando la capa no está instalada.
+
 ## Privacidad
 
 - El procesamiento ocurre por completo en el equipo, en `127.0.0.1`. La

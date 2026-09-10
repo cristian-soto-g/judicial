@@ -223,3 +223,8 @@ En el nivel **preciso**, en concreto:
 El nivel exhaustivo es el predeterminado por una razón de fondo: un falso
 positivo se descarta con un clic en la pantalla de revisión, mientras que un
 dato no detectado se publica.
+
+Cuando la capa opcional de lenguaje natural está instalada, el nivel preciso le
+aplica los mismos requisitos que a las reglas. De lo contrario el ajuste no
+diría la verdad: la interfaz ofrecería menos falsos positivos y el modelo
+seguiría proponiendo los suyos.

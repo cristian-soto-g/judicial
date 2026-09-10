@@ -74,7 +74,9 @@ def _parece_narrativa(surface: str) -> bool:
     return coincidencias >= max(1, len(normalizadas) // 2 + 1)
 
 
-def _es_persona_valida(surface: str, etiquetado: bool = False) -> bool:
+def _es_persona_valida(
+    surface: str, etiquetado: bool = False, del_modelo: bool = False
+) -> bool:
     valor = surface.strip()
     if len(valor) < 3:
         return False
@@ -103,7 +105,12 @@ def _es_persona_valida(surface: str, etiquetado: bool = False) -> bool:
     # Con contexto explícito —tratamiento, rol procesal o RUT contiguo— se
     # acepta sin exigir diccionario. Esta excepción es la que permite detectar
     # apellidos poco frecuentes en la misma medida que los habituales.
-    if etiquetado:
+    #
+    # Lo mismo vale para lo que aporta el modelo de lenguaje: su clasificación
+    # es la evidencia. Volver a exigirle diccionario anularía justamente
+    # aquello para lo que sirve la capa, que es reconocer los nombres que las
+    # reglas y el catálogo no alcanzan.
+    if etiquetado or del_modelo:
         return len(palabras) <= 6
 
     if len(palabras) == 1:
@@ -206,7 +213,7 @@ _ORG_COLA_NARRATIVA_RE = re.compile(
 _ORG_ABREVIATURA_FINAL_RE = re.compile(r"\b(?:n[°ºo]|nro|art|inc|de|del|la|el|y)\s*\.?\s*$", re.IGNORECASE)
 
 
-def _es_organizacion_valida(surface: str) -> bool:
+def _es_organizacion_valida(surface: str, del_modelo: bool = False) -> bool:
     valor = surface.strip()
     if len(valor) < 3:
         return False
@@ -219,6 +226,11 @@ def _es_organizacion_valida(surface: str) -> bool:
     if valor.isupper() and len(valor) <= 8:
         # Sigla institucional.
         return True
+    if del_modelo:
+        # El modelo reconoce razones sociales que ninguna regla prevé
+        # —"Codelco", "Falabella"—: exigirles el encabezado institucional o el
+        # sufijo societario las descartaría a todas.
+        return valor[0].isupper()
     return bool(_ORG_INICIO_RE.match(valor) or _ORG_SUFIJO_FINAL_RE.search(valor))
 
 
@@ -255,20 +267,29 @@ def is_valid_detection(
     texto: str = "",
     inicio: int = 0,
     etiquetado: bool = False,
+    procedencia: str = "regla",
 ) -> bool:
-    """Decide si una detección se conserva. Punto único de verdad del filtrado."""
+    """Decide si una detección se conserva. Punto único de verdad del filtrado.
+
+    `procedencia` distingue lo que produjo la mención. Las reglas y el modelo
+    de lenguaje aportan evidencias de naturaleza distinta, y aplicarles el
+    mismo criterio deja sin efecto a uno de los dos: un nombre que el modelo
+    reconoce es, por lo general, el que el catálogo no contiene.
+    """
     valor = surface.strip()
     if not valor or len(valor) < 2:
         return False
 
+    del_modelo = procedencia == "modelo"
+
     if cat == "PERSONA":
-        return _es_persona_valida(valor, etiquetado)
+        return _es_persona_valida(valor, etiquetado, del_modelo)
     if cat == "CAUSA":
         return _es_causa_valida(valor)
     if cat == "DOMICILIO":
         return _es_domicilio_valido(valor)
     if cat == "ORGANIZACION":
-        return _es_organizacion_valida(valor)
+        return _es_organizacion_valida(valor, del_modelo)
     if cat == "TELEFONO":
         return validar_telefono(valor)
     if cat == "PATENTE":

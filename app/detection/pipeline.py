@@ -85,7 +85,7 @@ def run_detection(
         try:
             from app.detection.spacy_layer import detect_spacy
 
-            items_spacy = detect_spacy(texto)
+            items_spacy = detect_spacy(texto, sensibilidad=sensibilidad)
             items.extend(items_spacy)
             logger.debug("Capa de lenguaje natural: %d menciones", len(items_spacy))
         except Exception as error:

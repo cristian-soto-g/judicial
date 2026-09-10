@@ -596,7 +596,7 @@ def _tiene_ancla_de_diccionario(valor: str) -> bool:
     return any(parte in nombres or parte in apellidos for parte in partes)
 
 
-def _tiene_nombre_y_apellido(valor: str) -> bool:
+def tiene_nombre_y_apellido(valor: str) -> bool:
     """Indica si el candidato trae a la vez un nombre de pila y un apellido."""
     nombres = get_nombres()
     apellidos = get_apellidos()
@@ -676,6 +676,41 @@ def _recortar_en_conector(valor: str) -> str:
     return partido[0].strip() if len(partido) > 1 else valor
 
 
+# Tratamientos y roles que preceden al nombre y que el modelo de lenguaje
+# suele incluir dentro de la entidad. No son datos personales y conviene
+# devolverlos al texto: "La señora [PERSONA_1] ratificó" se lee mejor que
+# "La [PERSONA_1] ratificó", y conserva la concordancia de la oración.
+_ENCABEZADO_TRATAMIENTO_RE = re.compile(
+    _ci(rf"^(?:{_TRATAMIENTOS}|{_ROLES_PROCESALES})\b[\s,\.:]*")
+)
+
+
+def recortar_nombre_de_persona(valor: str) -> tuple[str, int]:
+    """Ajusta un nombre capturado y devuelve (nombre, desplazamiento inicial).
+
+    El desplazamiento permite corregir la posición de la mención en el
+    documento: sin él, la sustitución quedaría desalineada respecto del texto.
+    """
+    original = valor
+    recortado = valor.strip()
+    desplazamiento = original.index(recortado) if recortado in original else 0
+
+    while True:
+        coincidencia = _ENCABEZADO_TRATAMIENTO_RE.match(recortado)
+        if not coincidencia or coincidencia.end() >= len(recortado):
+            break
+        desplazamiento += coincidencia.end()
+        recortado = recortado[coincidencia.end():]
+
+    previo = recortado
+    recortado = _recortar_encabezado_no_nominal(recortado)
+    if recortado != previo:
+        desplazamiento += previo.index(recortado) if recortado in previo else 0
+
+    recortado = _recortar_sufijo_societario(recortado)
+    return recortado.strip(" ,.;:"), desplazamiento
+
+
 def _detectar_persona(
     texto: str, exhaustivo: bool, preciso: bool = False
 ) -> list[tuple[int, int, str, bool]]:
@@ -749,7 +784,7 @@ def _detectar_persona(
             if _tiene_formula_judicial(candidato):
                 continue
             if preciso:
-                if not _tiene_nombre_y_apellido(candidato):
+                if not tiene_nombre_y_apellido(candidato):
                     continue
             elif not _tiene_ancla_de_diccionario(candidato):
                 continue

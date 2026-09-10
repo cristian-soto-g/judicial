@@ -96,7 +96,13 @@ buena la versión: no es una prueba informativa, es una condición de entrega.
   se ha medido.
 - La capa opcional de lenguaje natural aporta sus propios sesgos, heredados de
   los datos con que se entrenó el modelo. Al ser opcional y complementaria, no
-  altera la garantía de fondo, que descansa en las reglas de contexto.
+  altera la garantía de fondo, que descansa en las reglas de contexto. Conviene
+  señalar, eso sí, que su contribución va en la dirección correcta: reconoce
+  nombres sin contexto y con apellidos ausentes del catálogo, que es
+  precisamente el caso residual donde la detección por reglas resulta más
+  desigual. Durante el desarrollo esa contribución estuvo anulada, porque el
+  filtro de calidad le exigía al modelo el mismo respaldo del diccionario que a
+  las reglas y descartaba justamente los nombres que solo él encontraba.
 
 ## Cómo ampliar los catálogos
 
