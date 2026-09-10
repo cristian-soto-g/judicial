@@ -1,0 +1,77 @@
+Anonimizador Judicial Chile — uso personal y local
+Copyright (c) 2026
+
+================================================================================
+OBRA EN LA QUE SE BASA
+================================================================================
+
+Esta aplicación es una obra derivada de "Anonimizador Judicial", desarrollado
+por IALAB — Laboratorio de Innovación e Inteligencia Artificial, Facultad de
+Derecho, Universidad de Buenos Aires (UBA), y distribuido bajo la licencia
+Apache 2.0.
+
+  Obra original: https://github.com/CarolinaMMartin/anonimizador_uso_personal
+  Copyright (c) 2024-2026 IALAB — Facultad de Derecho, UBA
+
+Conforme a la Sección 4(b) de la licencia Apache 2.0, se deja constancia de que
+la presente obra introduce modificaciones sustantivas respecto de la original:
+
+  1. Adaptación del registro lingüístico: se sustituyó íntegramente el español
+     rioplatense (voseo y terminología procesal argentina) por un español
+     latinoamericano neutro, con tratamiento de usted y terminología procesal
+     chilena.
+  2. Reemplazo del catálogo de entidades: las once categorías argentinas
+     (DNI, CUIT/CUIL, Empresa, Expediente, Organismo, entre otras) fueron
+     reemplazadas por nueve categorías chilenas (Personas, RUT/Cédula de
+     identidad, Organizaciones, Emails, Teléfonos, Domicilios, Patentes, Otros
+     sensibles y Número de causa).
+  3. Reescritura completa de la capa de detección determinística: validación de
+     RUT por módulo 11, patentes chilenas en sus formatos vigentes e
+     históricos, numeración telefónica chilena (+56), y números de causa en las
+     nomenclaturas RIT, RUC y ROL.
+  4. Incorporación de reversibilidad mediante un mapa de correspondencias
+     cifrado (AES-GCM con derivación de clave por scrypt), inexistente en la
+     obra original.
+  5. Incorporación de la lectura de texto plano (.txt) y de controles
+     explícitos de sesgo en la detección de nombres de personas.
+
+Los módulos que conservan estructura o lógica derivada de la obra original
+llevan una nota de atribución en su encabezado, indicando qué se modificó.
+
+================================================================================
+MARCAS REGISTRADAS
+================================================================================
+
+Las marcas, nombres y logotipos de IALAB / Facultad de Derecho — UBA no están
+cubiertos por la licencia Apache 2.0 (Sección 6). En consecuencia:
+
+  * Esta obra derivada NO utiliza el logotipo de IALAB ni su denominación como
+    identificación del producto.
+  * Las menciones a IALAB en este archivo, en el README y en los encabezados de
+    los módulos tienen por único objeto describir el origen del trabajo, uso
+    que la Sección 6 de la licencia Apache 2.0 permite de forma expresa.
+
+================================================================================
+COMPONENTES DE TERCEROS
+================================================================================
+
+  * FastAPI, Starlette, Uvicorn, Pydantic — licencia MIT / BSD.
+  * python-docx, pdfplumber, ReportLab — licencias MIT / BSD / BSD-3-Clause.
+  * RapidFuzz, NetworkX — licencias MIT / BSD-3-Clause.
+  * cryptography (pyca) — Apache 2.0 / BSD-3-Clause.
+  * spaCy y su modelo es_core_news_md — MIT y GPL-3.0 respectivamente. La capa
+    de procesamiento de lenguaje natural es OPCIONAL: la aplicación funciona
+    sin ella. El modelo no se distribuye con este código fuente.
+
+================================================================================
+DATOS Y PRIVACIDAD
+================================================================================
+
+Este proyecto no distribuye documentos judiciales reales, sentencias, carpetas
+investigativas ni sesiones de uso. Los diccionarios incluidos en
+data/dictionaries/ contienen únicamente nombres y apellidos de uso público en
+Chile, seleccionados para cubrir de manera equilibrada distintos orígenes
+culturales, y expresiones regulares de detección.
+
+El procesamiento ocurre íntegramente en el equipo del usuario. Las sesiones
+viven solo en memoria y se pierden al cerrar la aplicación.

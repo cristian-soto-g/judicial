@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Anonimizador">
+  <rect width="32" height="32" rx="6" fill="#0b2545"/>
+  <path d="M8 11h16v2H8zm0 5h16v2H8zm0 5h9v2H8z" fill="#ffffff" opacity=".85"/>
+  <rect x="18" y="19" width="8" height="6" rx="1.5" fill="#8a1c2b"/>
+</svg>

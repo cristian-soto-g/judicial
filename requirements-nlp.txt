@@ -1,0 +1,13 @@
+# Capa opcional de procesamiento de lenguaje natural.
+#
+# La aplicación funciona sin estas dependencias: la detección determinística
+# (expresiones regulares y diccionarios) opera de forma autónoma. Instalarlas
+# mejora la detección de nombres y organizaciones no previstos por las reglas.
+#
+# Instalación:
+#   pip install -r requirements-nlp.txt
+#   python -m spacy download es_core_news_md
+#
+# Advertencia de licencia: el modelo es_core_news_md se distribuye bajo
+# GPL-3.0. Se descarga por separado y no forma parte de este repositorio.
+spacy>=3.7,<4.0

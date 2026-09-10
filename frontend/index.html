@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Anonimizador Judicial Chile</title>
+  <link rel="icon" href="/static/icono.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css?v=2">
+</head>
+<body>
+<div class="app">
+
+  <header class="cabecera">
+    <div class="cabecera-principal">
+      <div class="marca">
+        <h1>Anonimizador Judicial Chile</h1>
+        <p class="marca-sub">Uso personal y procesamiento local</p>
+        <span class="insignia insignia-local" id="insigniaEstado">Verificando el motor local…</span>
+      </div>
+      <div class="cabecera-texto">
+        <p class="cabecera-guia">
+          Detección asistida de datos personales en documentos judiciales.
+          Revise cada resultado antes de exportar: la detección automática
+          nunca es completa.
+        </p>
+        <p class="cabecera-privacidad">
+          Todo el procesamiento ocurre en este equipo. El documento no se envía
+          a ningún servidor y la sesión se pierde al cerrar la aplicación.
+        </p>
+      </div>
+    </div>
+
+    <nav class="pasos" aria-label="Etapas del proceso">
+      <button type="button" class="paso activo" data-paso="1"><span class="paso-num">1</span> Cargar</button>
+      <span class="paso-union"></span>
+      <button type="button" class="paso" data-paso="2"><span class="paso-num">2</span> Configurar</button>
+      <span class="paso-union"></span>
+      <button type="button" class="paso" data-paso="3"><span class="paso-num">3</span> Revisar</button>
+      <span class="paso-union"></span>
+      <button type="button" class="paso" data-paso="4"><span class="paso-num">4</span> Exportar</button>
+      <span class="paso-union"></span>
+      <button type="button" class="paso" data-paso="5"><span class="paso-num">5</span> Revertir</button>
+    </nav>
+  </header>
+
+  <main class="contenido">
+
+    <!-- ============ PASO 1: CARGA ============ -->
+    <section class="tarjeta" id="panelCarga">
+      <div class="tarjeta-encabezado">
+        <h2>Cargar el documento</h2>
+        <span class="tarjeta-paso">Paso 1</span>
+      </div>
+
+      <div class="aviso aviso-info">
+        <strong>Formatos admitidos</strong>
+        <ul>
+          <li><strong>Texto plano (.txt)</strong> — la lectura más fiable, sin metadatos.</li>
+          <li><strong>Word (.docx)</strong> — incluye tablas, encabezados y pies de página.</li>
+          <li><strong>PDF con texto seleccionable</strong> — para comprobarlo, intente seleccionar un párrafo con el cursor.</li>
+        </ul>
+        <p class="aviso-nota">
+          Esta aplicación <strong>no incluye reconocimiento óptico de caracteres</strong>.
+          Un PDF escaneado será rechazado, y si solo algunas páginas están
+          escaneadas se le advertirá cuáles quedaron fuera del análisis.
+        </p>
+      </div>
+
+      <div class="zona-carga" id="zonaCarga" tabindex="0" role="button" aria-label="Seleccionar archivo">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+        <p class="zona-carga-titulo">Haga clic aquí o arrastre el archivo</p>
+        <p class="zona-carga-sub">.txt, .docx o PDF con texto seleccionable</p>
+      </div>
+      <input type="file" id="entradaArchivo" accept=".txt,.docx,.pdf,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+      <div class="info-archivo" id="infoArchivo"></div>
+    </section>
+
+    <!-- ============ PASO 2: CONFIGURACIÓN ============ -->
+    <section class="tarjeta" id="panelConfiguracion">
+      <div class="tarjeta-encabezado">
+        <h2>Configurar el análisis</h2>
+        <span class="tarjeta-paso">Paso 2</span>
+      </div>
+      <p class="ayuda">
+        Defina cómo se reemplazará cada dato y qué categorías buscar. Todo
+        puede ajustarse después, en la revisión.
+      </p>
+
+      <div class="rejilla-configuracion">
+        <div class="bloque-configuracion">
+          <label class="etiqueta-campo">Modo de etiquetado</label>
+          <p class="pista-campo">Determina el texto que ocupará el lugar de cada dato.</p>
+          <div class="grupo-radio" role="radiogroup">
+            <label class="opcion-radio seleccionada">
+              <input type="radio" name="modo" value="cat" checked>
+              <span class="cuerpo-radio">
+                <strong>Categorizado</strong>
+                <small>Numera cada dato por separado: [PERSONA_1], [RUT_1]. <strong>Es el único modo reversible.</strong></small>
+              </span>
+            </label>
+            <label class="opcion-radio">
+              <input type="radio" name="modo" value="gen">
+              <span class="cuerpo-radio">
+                <strong>Genérico</strong>
+                <small>Sin numerar: [NOMBRE], [RUT]. Más legible, pero no permite revertir.</small>
+              </span>
+            </label>
+            <label class="opcion-radio">
+              <input type="radio" name="modo" value="ini">
+              <span class="cuerpo-radio">
+                <strong>Iniciales</strong>
+                <small>Sustituye los nombres por sus iniciales: J.P.M. No permite revertir.</small>
+              </span>
+            </label>
+          </div>
+
+          <label class="etiqueta-campo" style="margin-top:1.2rem">Sensibilidad</label>
+          <p class="pista-campo">Regula el equilibrio entre detectar de más y detectar de menos.</p>
+          <select class="campo" id="selectorSensibilidad">
+            <option value="exhaustiva" selected>Exhaustiva — detecta de más (recomendada)</option>
+            <option value="equilibrada">Equilibrada</option>
+            <option value="precisa">Precisa — menos falsos positivos</option>
+          </select>
+          <p class="pista-campo pista-suave">
+            La opción exhaustiva es la predeterminada de manera deliberada: un
+            falso positivo se descarta con un clic, mientras que un dato no
+            detectado se publica.
+          </p>
+        </div>
+
+        <div class="bloque-configuracion">
+          <label class="etiqueta-campo">Categorías por detectar</label>
+          <p class="pista-campo">
+            Desmarque las que no necesite. Siempre podrá agregar datos a mano
+            en la vista previa.
+          </p>
+          <div class="rejilla-casillas" id="casillasCategorias">
+            <label class="opcion-casilla" title="Nombres de personas naturales">
+              <input type="checkbox" data-cat="PERSONA" checked><span class="punto" style="--c:#9f3343"></span> Personas</label>
+            <label class="opcion-casilla" title="RUT y cédula de identidad, con verificación del dígito verificador">
+              <input type="checkbox" data-cat="RUT" checked><span class="punto" style="--c:#8a4a19"></span> RUT/Cédula de identidad</label>
+            <label class="opcion-casilla" title="Empresas, instituciones y organismos públicos">
+              <input type="checkbox" data-cat="ORGANIZACION" checked><span class="punto" style="--c:#4a1e78"></span> Organizaciones</label>
+            <label class="opcion-casilla" title="Correos electrónicos">
+              <input type="checkbox" data-cat="EMAIL" checked><span class="punto" style="--c:#256c5b"></span> Emails</label>
+            <label class="opcion-casilla" title="Teléfonos fijos y móviles chilenos">
+              <input type="checkbox" data-cat="TELEFONO" checked><span class="punto" style="--c:#24647a"></span> Teléfonos</label>
+            <label class="opcion-casilla" title="Direcciones y domicilios">
+              <input type="checkbox" data-cat="DOMICILIO" checked><span class="punto" style="--c:#7a476d"></span> Domicilios</label>
+            <label class="opcion-casilla" title="Placas patente únicas de vehículos">
+              <input type="checkbox" data-cat="PATENTE" checked><span class="punto" style="--c:#5a3d6e"></span> Patentes</label>
+            <label class="opcion-casilla" title="Pasaporte, NUE, cuentas, fechas de nacimiento y similares">
+              <input type="checkbox" data-cat="OTRO" checked><span class="punto" style="--c:#445a84"></span> Otros sensibles</label>
+            <label class="opcion-casilla" title="RIT, RUC y ROL">
+              <input type="checkbox" data-cat="CAUSA" checked><span class="punto" style="--c:#0b2545"></span> Número de causa</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="acciones">
+        <button class="boton boton-primario" id="botonAnalizar" disabled>
+          <span class="cargador" id="cargadorAnalisis"></span>
+          <span>Analizar el documento</span>
+        </button>
+        <button class="boton boton-contorno" id="botonDetener" type="button" hidden>Detener</button>
+      </div>
+    </section>
+
+    <!-- ============ ESTADÍSTICAS ============ -->
+    <div class="fila-estadisticas" id="filaEstadisticas" hidden></div>
+
+    <!-- ============ PASO 3: REVISIÓN ============ -->
+    <section class="area-trabajo" id="areaTrabajo" hidden>
+      <div class="aviso aviso-consejo">
+        <strong>Cómo revisar</strong>
+        En la tabla puede corregir el tipo, editar la sustitución o desmarcar
+        lo que no corresponda. En la vista previa, seleccione texto con el
+        cursor para agregar un dato que el motor no haya detectado. La pestaña
+        de identidades reúne las variantes de un mismo nombre.
+      </div>
+
+      <div class="panel-dividido">
+        <div class="panel-izquierdo">
+          <div class="tarjeta tarjeta-vista">
+            <div class="tarjeta-encabezado tarjeta-encabezado-dividido">
+              <h2>Vista previa</h2>
+              <div class="acciones-vista">
+                <button type="button" class="boton-icono" id="abrirBuscador" title="Buscar en el documento">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
+                <div class="control-segmentado">
+                  <button class="boton-segmento activo" id="verOriginal" type="button">Original</button>
+                  <button class="boton-segmento" id="verAnonimizado" type="button">Anonimizado</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="barra-busqueda" id="barraBusqueda" hidden>
+              <div class="fila-busqueda">
+                <input type="search" id="campoBusqueda" class="campo campo-busqueda" placeholder="Buscar en el documento…" autocomplete="off">
+                <span class="conteo-busqueda" id="conteoBusqueda">0 coincidencias</span>
+                <select id="categoriaBusqueda" class="campo campo-categoria" aria-label="Categoría"></select>
+                <button type="button" class="boton boton-pequeno boton-primario" id="anonimizarBusqueda" disabled>Anonimizar todas</button>
+                <button type="button" class="boton-icono" id="cerrarBuscador" title="Cerrar">✕</button>
+              </div>
+              <p class="pista-campo">La búsqueda ignora mayúsculas y acentos, y opera sobre el documento original.</p>
+            </div>
+
+            <div class="envoltorio-vista">
+              <div class="cuerpo-vista" id="vistaDocumento"></div>
+              <div class="barra-seleccion" id="barraSeleccion" hidden>
+                <span class="fragmento-seleccion" id="fragmentoSeleccion"></span>
+                <select id="categoriaSeleccion" class="campo campo-categoria" aria-label="Categoría"></select>
+                <button type="button" class="boton boton-pequeno boton-primario" id="anonimizarSeleccion">Anonimizar</button>
+                <button type="button" class="boton boton-pequeno boton-fantasma" id="cancelarSeleccion">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-derecho">
+          <div class="tarjeta tarjeta-revision">
+            <div class="pestanas" role="tablist">
+              <button type="button" class="pestana activa" data-pestana="detecciones">
+                Detecciones <span class="contador" id="contadorDetecciones">0</span>
+              </button>
+              <button type="button" class="pestana" data-pestana="grupos">
+                Identidades <span class="contador" id="contadorGrupos">0</span>
+              </button>
+            </div>
+
+            <div class="panel-pestana activo" id="panelDetecciones">
+              <div class="filtros-tabla">
+                <input type="search" class="campo campo-busqueda" id="filtroDetecciones" placeholder="Filtrar detecciones…" autocomplete="off">
+                <select class="campo campo-categoria" id="filtroCategoria" aria-label="Filtrar por categoría"></select>
+              </div>
+              <div class="tabla-desplazable" id="tablaDetecciones">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:34px" title="Incluir en la exportación"></th>
+                      <th style="width:158px">Tipo</th>
+                      <th>Dato original</th>
+                      <th style="width:150px">Sustitución</th>
+                      <th style="width:48px" title="Ocurrencias">N.º</th>
+                      <th style="width:34px"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="cuerpoDetecciones"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-pestana" id="panelGrupos" hidden>
+              <p class="ayuda">
+                Los grupos reúnen distintas formas de nombrar a la misma
+                persona. Confírmelos para que todas compartan una sola
+                sustitución, o quite la variante que no corresponda: es
+                frecuente que dos familiares compartan apellido sin ser la
+                misma persona.
+              </p>
+              <div class="lista-grupos" id="listaGrupos"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PASO 4: EXPORTACIÓN ============ -->
+    <section class="tarjeta" id="panelExportacion" hidden>
+      <div class="tarjeta-encabezado">
+        <h2>Verificar y exportar</h2>
+        <span class="tarjeta-paso">Paso 4</span>
+      </div>
+      <p class="ayuda">
+        Lea el texto anonimizado completo antes de exportarlo. Puede corregir
+        la redacción y elegir el formato del documento final.
+      </p>
+
+      <div class="aviso aviso-alerta">
+        <strong>Antes de compartir</strong>
+        <p class="aviso-nota">
+          Verifique que no quede ningún dato personal sin reemplazar. Las
+          modificaciones que haga en el editor no vuelven a analizarse, de modo
+          que no reintroduzca datos reales al corregir la redacción.
+        </p>
+      </div>
+
+      <div class="disposicion-editor">
+        <aside class="formato-editor">
+          <h3>Formato</h3>
+          <label class="etiqueta-campo" for="fmtFuente">Tipografía</label>
+          <select class="campo" id="fmtFuente">
+            <option value="Times New Roman" selected>Times New Roman</option>
+            <option value="Arial">Arial</option>
+            <option value="Calibri">Calibri</option>
+          </select>
+          <label class="etiqueta-campo" for="fmtTamano">Tamaño</label>
+          <select class="campo" id="fmtTamano">
+            <option value="11">11 pt</option>
+            <option value="12" selected>12 pt</option>
+            <option value="14">14 pt</option>
+          </select>
+          <label class="etiqueta-campo" for="fmtInterlineado">Interlineado</label>
+          <select class="campo" id="fmtInterlineado">
+            <option value="1">Simple</option>
+            <option value="1.5" selected>1,5 líneas</option>
+            <option value="2">Doble</option>
+          </select>
+          <label class="etiqueta-campo" for="fmtAlineacion">Alineación</label>
+          <select class="campo" id="fmtAlineacion">
+            <option value="justify" selected>Justificada</option>
+            <option value="left">Izquierda</option>
+            <option value="center">Centrada</option>
+            <option value="right">Derecha</option>
+          </select>
+          <label class="etiqueta-campo" for="fmtMargen">Márgenes laterales</label>
+          <select class="campo" id="fmtMargen">
+            <option value="2.5">2,5 cm</option>
+            <option value="3" selected>3 cm</option>
+            <option value="3.5">3,5 cm</option>
+          </select>
+        </aside>
+
+        <div class="principal-editor">
+          <label class="etiqueta-campo" for="editorTexto">Texto anonimizado</label>
+          <textarea class="area-editor" id="editorTexto" rows="20" spellcheck="true"></textarea>
+        </div>
+      </div>
+
+      <div class="acciones acciones-editor">
+        <button class="boton boton-primario" id="exportarDocx" type="button">Exportar a Word</button>
+        <button class="boton boton-contorno" id="exportarPdf" type="button">Exportar a PDF</button>
+        <button class="boton boton-contorno" id="exportarTxt" type="button">Exportar a texto</button>
+        <button class="boton boton-contorno" id="exportarCsv" type="button" title="Contiene los datos originales sin cifrar">Tabla de equivalencias</button>
+        <button class="boton boton-fantasma" id="reiniciar" type="button">Empezar de nuevo</button>
+      </div>
+
+      <div class="aviso aviso-alerta">
+        <strong>La tabla de equivalencias no está cifrada</strong>
+        <p class="aviso-nota">
+          Ese archivo contiene los datos originales en claro. Sirve para su
+          control interno; no lo comparta junto con el documento anonimizado.
+          Si necesita conservar la posibilidad de revertir, use el mapa cifrado
+          de la etapa siguiente.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ PASO 5: REVERSIBILIDAD ============ -->
+    <section class="tarjeta" id="panelReversion" hidden>
+      <div class="tarjeta-encabezado">
+        <h2>Reversibilidad</h2>
+        <span class="tarjeta-paso">Paso 5</span>
+      </div>
+
+      <div class="dos-columnas">
+        <div class="columna">
+          <h3>Generar el mapa de reversión</h3>
+          <p class="ayuda">
+            El mapa asocia cada etiqueta con el dato que reemplazó. Se descarga
+            como archivo aparte y cifrado, de modo que el documento anonimizado
+            pueda compartirse sin arrastrar consigo la información que permite
+            deshacer la anonimización.
+          </p>
+
+          <div class="aviso aviso-alerta">
+            <strong>La frase de paso no se guarda en ninguna parte</strong>
+            <p class="aviso-nota">
+              Ni en este equipo, ni en la sesión, ni en el archivo. Es una
+              decisión de diseño, no una omisión: si la pierde, la reversión
+              será imposible. Anótela en un lugar seguro y distinto de donde
+              guarde el mapa.
+            </p>
+          </div>
+
+          <label class="etiqueta-campo" for="fraseMapa">Frase de paso (mínimo 12 caracteres)</label>
+          <input type="password" class="campo" id="fraseMapa" autocomplete="new-password" placeholder="Una frase larga y memorable">
+          <label class="etiqueta-campo" for="fraseMapaConfirmar">Repita la frase de paso</label>
+          <input type="password" class="campo" id="fraseMapaConfirmar" autocomplete="new-password">
+          <label class="etiqueta-campo" for="notaMapa">Nota interna (opcional)</label>
+          <input type="text" class="campo" id="notaMapa" placeholder="Por ejemplo: causa RIT 145-2024, respaldo del tribunal">
+
+          <div class="acciones">
+            <button class="boton boton-primario" id="generarMapa" type="button">Descargar el mapa cifrado</button>
+          </div>
+          <p class="pista-campo pista-suave" id="estadoMapa"></p>
+        </div>
+
+        <div class="columna">
+          <h3>Revertir un documento</h3>
+          <p class="ayuda">
+            Cargue el documento anonimizado y su mapa cifrado para restituir
+            los datos originales. Esta operación se resuelve por completo en
+            este equipo y nada queda almacenado.
+          </p>
+
+          <label class="etiqueta-campo" for="archivoMapa">Archivo del mapa (.anonmap)</label>
+          <input type="file" class="campo" id="archivoMapa" accept=".anonmap,application/json">
+
+          <label class="etiqueta-campo" for="archivoAnonimizado">Documento anonimizado (.txt, .docx o PDF)</label>
+          <input type="file" class="campo" id="archivoAnonimizado" accept=".txt,.docx,.pdf">
+
+          <label class="etiqueta-campo" for="textoAnonimizado">O pegue aquí el texto anonimizado</label>
+          <textarea class="campo area-pequena" id="textoAnonimizado" rows="5" placeholder="Pegue el texto si prefiere no adjuntar un archivo"></textarea>
+
+          <label class="etiqueta-campo" for="fraseRevertir">Frase de paso del mapa</label>
+          <input type="password" class="campo" id="fraseRevertir" autocomplete="current-password">
+
+          <div class="acciones">
+            <button class="boton boton-primario" id="botonRevertir" type="button">Revertir</button>
+          </div>
+
+          <div id="resultadoReversion" hidden>
+            <p class="pista-campo" id="resumenReversion"></p>
+            <textarea class="campo area-pequena" id="textoRevertido" rows="8" readonly></textarea>
+            <div class="acciones">
+              <button class="boton boton-contorno" id="descargarRevertidoDocx" type="button">Descargar en Word</button>
+              <button class="boton boton-contorno" id="descargarRevertidoTxt" type="button">Descargar en texto</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="pie">
+    <p>
+      Aplicación de uso personal con procesamiento local. Basada en el
+      <strong>Anonimizador Judicial</strong> de IALAB — Laboratorio de
+      Innovación e Inteligencia Artificial, Facultad de Derecho, Universidad de
+      Buenos Aires, distribuido bajo licencia Apache 2.0. Esta obra derivada
+      adapta la aplicación al ordenamiento chileno y no está afiliada a IALAB
+      ni cuenta con su patrocinio.
+    </p>
+    <p class="pie-version" id="pieVersion"></p>
+  </footer>
+</div>
+
+<div class="notificacion" id="notificacion" role="status" aria-live="polite"></div>
+<script src="/static/app.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Datos sensibles: nunca versionar documentos ni mapas de reversión.
+*.anonmap
+data/sessions.db
+documentos/
+salidas/
+*.docx
+*.pdf
+!tests/fixtures/*.docx
+!tests/fixtures/*.pdf
