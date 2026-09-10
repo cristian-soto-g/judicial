@@ -50,20 +50,36 @@ en [docs/ENTIDADES.md](docs/ENTIDADES.md).
 
 ## Instalación y uso
 
-Requiere **Python 3.11 o superior**.
+Requiere **Python 3.11 o superior**. No existe todavía una descarga
+empaquetada: lo que se descarga es el código fuente, y un archivo de arranque
+prepara el entorno con un doble clic.
+
+**En macOS**: siga la guía paso a paso de
+[docs/INSTALACION_MAC.md](docs/INSTALACION_MAC.md), pensada para hacerlo sin
+usar la terminal. En resumen: instale Python desde
+[python.org](https://www.python.org/downloads/macos/), descargue y descomprima
+el proyecto, y haga doble clic en **`INICIAR.command`**.
+
+**En Windows**: descargue y descomprima el proyecto, y haga doble clic en
+**`INICIAR.bat`**.
+
+**En Linux**: ejecute `./INICIAR.sh` desde una terminal.
+
+Los tres lanzadores hacen lo mismo: comprueban la versión de Python, crean el
+entorno virtual la primera vez, instalan las dependencias y abren la aplicación
+en el navegador, en <http://127.0.0.1:8799>.
+
+Si prefiere hacerlo a mano:
 
 ```bash
-git clone https://github.com/cristian-soto-g/judicial.git
+git clone --branch claude/anonimizador-personal-local-ziqd1w \
+  https://github.com/cristian-soto-g/judicial.git
 cd judicial
 python3 -m venv .venv
 source .venv/bin/activate          # en Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 python scripts/run_dev.py
 ```
-
-La aplicación se abre sola en <http://127.0.0.1:8799>. En Windows puede usar
-`INICIAR.bat` y, en macOS o Linux, `INICIAR.sh`: ambos crean el entorno virtual
-la primera vez y levantan la aplicación.
 
 Para comprobar que el entorno esté completo:
 
