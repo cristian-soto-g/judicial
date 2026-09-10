@@ -155,10 +155,21 @@ jobs:
           borre la carpeta.
 
           **macOS**: descargue el archivo que termina en
-          `macOS-AppleSilicon.zip` y descomprímalo. La primera vez, haga clic
-          derecho sobre `INICIAR.sh` y elija Abrir, porque el paquete no está
-          firmado ante Apple y el sistema lo bloquea por defecto. Los detalles
-          están en `docs/INSTALACION_MAC.md`.
+          `macOS-AppleSilicon.zip` y descomprímalo. Está construido para Mac
+          con procesador Apple Silicon.
+
+          ### La primera vez, el sistema le advertirá
+
+          Es lo esperable y no indica que haya algo malo en el archivo. Ocurre
+          porque la aplicación no está firmada con un certificado comercial,
+          que es un trámite de pago ante Microsoft o Apple.
+
+          En **Windows** aparecerá una ventana azul que dice «Windows protegió
+          su PC». Presione **Más información** y luego **Ejecutar de todas
+          formas**.
+
+          En **macOS**, haga clic derecho sobre `INICIAR.sh`, elija **Abrir** y
+          confirme. Los detalles están en `docs/INSTALACION_MAC.md`.
 
           ### Verificar la descarga
 

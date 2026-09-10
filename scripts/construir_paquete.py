@@ -43,6 +43,23 @@ en la dirección http://127.0.0.1:8799
 Para cerrarla, presione Control+C en esa ventana o ciérrela. Al hacerlo se
 descarta de la memoria el documento que estuviera procesando.
 
+LA PRIMERA VEZ, EL SISTEMA LE ADVERTIRÁ
+---------------------------------------
+Es lo esperable y no indica que haya algo malo en el archivo. Ocurre porque
+esta aplicación no está firmada con un certificado comercial, que es un
+trámite de pago ante Microsoft o Apple.
+
+En Windows aparecerá una ventana azul que dice "Windows protegió su PC".
+Presione "Más información" y luego "Ejecutar de todas formas".
+
+En macOS aparecerá un aviso sobre un desarrollador no identificado. Haga clic
+derecho sobre INICIAR.sh, elija "Abrir" y confirme.
+
+Puede comprobar que el archivo descargado es el correcto contrastando su suma
+de verificación SHA-256 con la publicada junto a la descarga. En Windows:
+
+    certutil -hashfile NOMBRE_DEL_ARCHIVO.zip SHA256
+
 NO REQUIERE INSTALACIÓN
 -----------------------
 Esta carpeta es autónoma. No instala nada en el equipo, no requiere permisos de

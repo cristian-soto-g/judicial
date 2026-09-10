@@ -59,9 +59,13 @@ se descomprimen y se abren con un doble clic. Para desinstalar, se borra la
 carpeta.
 
 En Windows, doble clic en `INICIAR.bat`. En macOS, clic derecho sobre
-`INICIAR.sh` y elegir Abrir la primera vez, porque el paquete no está firmado
-ante Apple; los detalles están en
+`INICIAR.sh` y elegir Abrir; los detalles están en
 [docs/INSTALACION_MAC.md](docs/INSTALACION_MAC.md).
+
+La primera vez el sistema advertirá que el programa no está firmado. Es lo
+esperable: firmar un ejecutable exige un certificado comercial de pago. En
+Windows, presione «Más información» y luego «Ejecutar de todas formas»; en
+macOS, use el clic derecho descrito arriba.
 
 Cada archivo viene con su suma de verificación SHA-256 para comprobar la
 descarga.
