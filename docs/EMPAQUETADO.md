@@ -11,14 +11,20 @@ verificación.
 
 ## Cómo publicar una versión nueva
 
-Cree y empuje una etiqueta que comience con `v`:
+**Desde el navegador.** Entre a la pestaña **Actions** del repositorio, elija
+el flujo «Paquete portable», presione **Run workflow**, escriba el
+identificador de la versión —por ejemplo `v1.0.1`— y marque la casilla «Crear
+además la versión en borrador».
+
+**Desde la línea de comandos.** Cree y empuje una etiqueta que comience con
+`v`:
 
 ```bash
 git tag v1.0.1
 git push origin v1.0.1
 ```
 
-Eso pone en marcha el flujo `.github/workflows/paquete.yml`, que en los equipos
+Cualquiera de las dos pone en marcha el flujo `.github/workflows/paquete.yml`, que en los equipos
 de GitHub ejecuta las pruebas, construye el paquete para Windows y para macOS,
 lo verifica, calcula su suma SHA-256 y reúne todo en una versión.
 

@@ -2,18 +2,24 @@ name: Paquete portable
 
 # Construye la distribución portable y la deja disponible para descargar.
 #
-# Dos formas de usarlo:
+# Tres formas de usarlo:
 #
-#   1. Preparar una versión. Cree y empuje una etiqueta que comience con "v":
+#   1. Preparar una versión desde la pestaña «Actions». Elija este flujo,
+#      presione «Run workflow», escriba el identificador (por ejemplo v1.0.0)
+#      y marque «Crear además la versión en borrador».
+#
+#   2. Preparar una versión desde la línea de comandos, empujando una etiqueta
+#      que comience con "v":
 #          git tag v1.0.0 && git push origin v1.0.0
-#      La versión se crea EN BORRADOR, con ambos paquetes y sus sumas de
-#      verificación. Solo usted la ve. Revísela y, cuando esté conforme,
-#      publíquela con un clic desde la sección «Releases» del repositorio.
-#      Mientras siga en borrador puede eliminarse sin dejar rastro público.
 #
-#   2. Probar sin publicar. Desde la pestaña «Actions» de GitHub, elija este
-#      flujo y presione «Run workflow». El paquete queda como artefacto
-#      descargable durante catorce días, sin crear una versión pública.
+#   3. Solo probar la compilación. Ejecútelo desde «Actions» sin marcar la
+#      casilla: el paquete queda como artefacto descargable durante catorce
+#      días, sin crear versión alguna.
+#
+# En los dos primeros casos la versión se crea EN BORRADOR, con ambos paquetes
+# y sus sumas de verificación. Solo la ve quien administra el repositorio.
+# Revísela y publíquela con un clic desde la sección «Releases». Mientras siga
+# en borrador puede eliminarse sin dejar rastro público.
 #
 # La compilación ocurre en los equipos de GitHub porque un ejecutable de
 # Windows solo puede construirse en Windows, y uno de macOS solo en macOS.
@@ -22,14 +28,14 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Identificador de la compilación (por ejemplo, v1.0.0-pruebas)'
+        description: 'Identificador de la versión (por ejemplo, v1.0.0)'
         required: false
         default: 'prueba'
-      incluir_macos:
-        description: '¿Construir también el paquete de macOS?'
+      crear_version:
+        description: 'Crear además la versión en borrador con ese identificador'
         type: boolean
         required: false
-        default: true
+        default: false
   push:
     tags:
       - 'v*'
@@ -115,7 +121,7 @@ jobs:
   publicar:
     name: Preparar la versión en borrador
     needs: construir
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.crear_version
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -192,14 +198,23 @@ jobs:
           ni cuenta con su patrocinio.
           NOTAS
 
+          # El identificador proviene de la etiqueta empujada o, si el flujo se
+          # ejecutó a mano, del dato que se escribió al lanzarlo.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ETIQUETA="${{ inputs.version }}"
+          else
+            ETIQUETA="${GITHUB_REF_NAME}"
+          fi
+
           # En borrador de manera deliberada: la publicación de una versión es
           # un acto que queda expuesto de forma permanente, y conviene que lo
           # decida una persona después de revisar lo construido.
-          gh release create "${GITHUB_REF_NAME}" \
+          gh release create "$ETIQUETA" \
             --draft \
-            --title "Anonimizador Judicial Chile ${GITHUB_REF_NAME}" \
+            --target "${{ github.sha }}" \
+            --title "Anonimizador Judicial Chile $ETIQUETA" \
             --notes-file notas.md \
             paquetes/*.zip paquetes/*.sha256
 
-          echo "Versión creada en borrador. Revísela y publíquela desde:"
+          echo "Versión $ETIQUETA creada en borrador. Revísela y publíquela desde:"
           echo "https://github.com/${GITHUB_REPOSITORY}/releases"
