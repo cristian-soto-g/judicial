@@ -20,7 +20,14 @@ git push origin v1.0.1
 
 Eso pone en marcha el flujo `.github/workflows/paquete.yml`, que en los equipos
 de GitHub ejecuta las pruebas, construye el paquete para Windows y para macOS,
-lo verifica, calcula su suma SHA-256 y publica todo en la sección de versiones.
+lo verifica, calcula su suma SHA-256 y reúne todo en una versión.
+
+**La versión se crea en borrador.** Solo la ve quien administra el
+repositorio. Revísela, descargue los paquetes si quiere comprobarlos, y
+publíquela con un clic desde la sección Releases cuando esté conforme.
+Mientras siga en borrador puede eliminarse sin que haya quedado rastro
+público. La decisión es deliberada: publicar una versión es un acto que queda
+expuesto de forma permanente, y conviene que lo tome una persona.
 
 Para probar el proceso sin publicar nada, entre a la pestaña **Actions**, elija
 el flujo «Paquete portable» y presione **Run workflow**. El resultado queda
