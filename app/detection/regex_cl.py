@@ -100,9 +100,20 @@ _ROLES_PROCESALES = (
     r"beneficiari[oa]|alimentari[oa]|alimentante)"
 )
 
-# Cualquier forma de nombre propio: en mayúscula inicial o en versales.
+# Nombre que comienza con iniciales: "J. I. Pérez Muñoz". Aparece sobre todo
+# en firmas y en la individualización de peritos y funcionarios. Va primero en
+# la alternativa porque, de lo contrario, la expresión capturaría solo los
+# apellidos y las iniciales quedarían a la vista en el documento anonimizado.
+_NOMBRE_CON_INICIALES = (
+    rf"(?:[{_MAY}]\.\s*){{1,3}}"
+    rf"{_PALABRA_TITULO}(?:\s+(?:{_PARTICULA}\s+)?{_PALABRA_TITULO}){{0,3}}"
+)
+
+# Cualquier forma de nombre propio: con iniciales, en mayúscula inicial o en
+# versales.
 _NOMBRE = (
-    rf"(?:{_PALABRA_TITULO}(?:\s+(?:{_PARTICULA}\s+)?{_PALABRA_TITULO}){{1,4}}"
+    rf"(?:{_NOMBRE_CON_INICIALES}"
+    rf"|{_PALABRA_TITULO}(?:\s+(?:{_PARTICULA}\s+)?{_PALABRA_TITULO}){{1,4}}"
     rf"|{_PALABRA_MAYUSCULA}(?:\s+(?:DE|DEL|LA|LAS|LOS|Y)\s+)?"
     rf"(?:\s*{_PALABRA_MAYUSCULA}){{1,4}})"
 )
@@ -283,14 +294,22 @@ _PATENTE_ACTUAL_RE = re.compile(r"\b([BCDFGHJKLPRSTVWXYZ]{4}\s*[·•\.\-]?\s*\d
 _PATENTE_PUNTO_MEDIO_RE = re.compile(r"\b([A-Z]{2,4}\s*[·•]\s*\d{2,4})\b")
 
 
-def _detectar_patente(texto: str) -> list[tuple[int, int, str, bool]]:
+def _detectar_patente(texto: str, preciso: bool = False) -> list[tuple[int, int, str, bool]]:
     hallazgos: list[tuple[int, int, str, bool]] = []
 
     for m in _PATENTE_ETIQUETADA_RE.finditer(texto):
         if validar_patente(m.group(1), con_etiqueta=True):
             hallazgos.append((m.start(1), m.end(1), m.group(1).strip(), True))
 
-    for patron in (_PATENTE_ACTUAL_RE, _PATENTE_PUNTO_MEDIO_RE):
+    # En modo preciso solo se admite el formato vigente sin rótulo, que es
+    # inequívoco. El separado por punto medio queda fuera porque los formatos
+    # antiguos pueden coincidir con siglas y numeraciones del propio escrito.
+    patrones = (
+        (_PATENTE_ACTUAL_RE,)
+        if preciso
+        else (_PATENTE_ACTUAL_RE, _PATENTE_PUNTO_MEDIO_RE)
+    )
+    for patron in patrones:
         for m in patron.finditer(texto):
             if validar_patente(m.group(1)):
                 hallazgos.append((m.start(1), m.end(1), m.group(1).strip(), False))
@@ -419,7 +438,7 @@ def _fusionar_tramos(
     return fusionados
 
 
-def _detectar_domicilio(texto: str) -> list[tuple[int, int, str, bool]]:
+def _detectar_domicilio(texto: str, preciso: bool = False) -> list[tuple[int, int, str, bool]]:
     tramos: list[tuple[int, int, str]] = []
 
     for m in _DOMICILIO_VIA_NUMERO_RE.finditer(texto):
@@ -436,7 +455,14 @@ def _detectar_domicilio(texto: str) -> list[tuple[int, int, str, bool]]:
     for m in _COMUNA_RE.finditer(texto):
         tramos.append((m.start(), m.end(), m.group(0).strip()))
 
-    return [(i, f, v, True) for i, f, v in _fusionar_tramos(texto, tramos)]
+    fusionados = _fusionar_tramos(texto, tramos)
+
+    if preciso:
+        # Una dirección real trae numeración. Sin ella la captura suele ser el
+        # nombre de un lugar, no el domicilio de nadie.
+        fusionados = [t for t in fusionados if re.search(r"\d", t[2])]
+
+    return [(i, f, v, True) for i, f, v in fusionados]
 
 
 # =========================================================================
@@ -531,10 +557,14 @@ _PERSONA_APELLIDO_COMA_RE = re.compile(
     rf"([{_MAY}][{_MAY}{_MIN}]{{2,}}(?:\s+[{_MAY}][{_MAY}{_MIN}]{{2,}}){{0,3}})\b"
 )
 
-# Nombre con inicial intermedia: "Juan P. Muñoz".
+# Nombre con inicial intermedia: "Juan P. Muñoz", "Juan I. Pérez Muñoz".
 _PERSONA_INICIAL_RE = re.compile(
-    rf"\b({_PALABRA_TITULO}\s+(?:[{_MAY}]\.\s*){{1,3}}{_PALABRA_TITULO})\b"
+    rf"\b({_PALABRA_TITULO}\s+(?:[{_MAY}]\.\s*){{1,3}}"
+    rf"{_PALABRA_TITULO}(?:\s+(?:{_PARTICULA}\s+)?{_PALABRA_TITULO}){{0,2}})\b"
 )
+
+# Nombre encabezado por iniciales: "J. I. Pérez Muñoz".
+_PERSONA_INICIALES_PREFIJO_RE = re.compile(rf"\b({_NOMBRE_CON_INICIALES})\b")
 
 _PERSONA_CAPITALIZADA_RE = re.compile(
     rf"\b({_PALABRA_TITULO}(?:\s+(?:{_PARTICULA}\s+)?{_PALABRA_TITULO}){{1,4}})\b"
@@ -564,6 +594,14 @@ def _tiene_ancla_de_diccionario(valor: str) -> bool:
     apellidos = get_apellidos()
     partes = [normalize_text(p) for p in valor.split() if len(p) > 1]
     return any(parte in nombres or parte in apellidos for parte in partes)
+
+
+def _tiene_nombre_y_apellido(valor: str) -> bool:
+    """Indica si el candidato trae a la vez un nombre de pila y un apellido."""
+    nombres = get_nombres()
+    apellidos = get_apellidos()
+    partes = [normalize_text(p) for p in valor.split() if len(p) > 1]
+    return any(p in nombres for p in partes) and any(p in apellidos for p in partes)
 
 
 def _tiene_formula_judicial(valor: str) -> bool:
@@ -600,7 +638,7 @@ def _recortar_encabezado_no_nominal(valor: str) -> str:
     partes = valor.split()
     nombres, apellidos, formulas = get_nombres(), get_apellidos(), get_formulas()
 
-    while len(partes) > 2:
+    while len(partes) > 1:
         primera = normalize_text(partes[0])
         if primera in nombres or primera in apellidos:
             break
@@ -616,18 +654,37 @@ def _recortar_encabezado_no_nominal(valor: str) -> str:
     return " ".join(partes)
 
 
+# Sufijo societario al final de un candidato a nombre de persona. Ocurre en
+# razones sociales formadas con el nombre de su titular —"Juan Pérez Muñoz
+# Ltda."—: la persona está ahí, pero el sufijo no forma parte de su nombre.
+_SUFIJO_SOCIETARIO_FINAL_RE = re.compile(
+    r"\s+(?:S\.?\s?A\.?|S\.?\s?p\.?\s?A\.?|Ltda\.?|Limitada|"
+    r"E\.?\s?I\.?\s?R\.?\s?L\.?)$",
+    re.IGNORECASE,
+)
+
+
+def _recortar_sufijo_societario(valor: str) -> str:
+    """Quita el sufijo de sociedad que quede al final de un nombre de persona."""
+    recortado = _SUFIJO_SOCIETARIO_FINAL_RE.sub("", valor).strip()
+    return recortado if len(recortado.split()) >= 2 else valor
+
+
 def _recortar_en_conector(valor: str) -> str:
     """Evita unir dos personas distintas: "Ana Soto y Luis Pérez"."""
     partido = _CONECTOR_Y_RE.split(valor, maxsplit=1)
     return partido[0].strip() if len(partido) > 1 else valor
 
 
-def _detectar_persona(texto: str, exhaustivo: bool) -> list[tuple[int, int, str, bool]]:
+def _detectar_persona(
+    texto: str, exhaustivo: bool, preciso: bool = False
+) -> list[tuple[int, int, str, bool]]:
     hallazgos: list[tuple[int, int, str, bool]] = []
 
     def agregar(valor: str, inicio: int, etiquetado: bool) -> None:
         limpio = _recortar_encabezado_no_nominal(valor.strip(" ,.;:"))
         limpio = _recortar_en_conector(limpio)
+        limpio = _recortar_sufijo_societario(limpio)
         if len(limpio) < 3:
             return
         desplazamiento = valor.index(limpio) if limpio in valor else 0
@@ -666,19 +723,35 @@ def _detectar_persona(texto: str, exhaustivo: bool) -> list[tuple[int, int, str,
             continue
         agregar(completo, m.start(), False)
 
-    # 3. Nombre con inicial intermedia.
+    # 3. Nombre con inicial intermedia o encabezado por iniciales. En el
+    #    segundo caso se exige ancla en el catálogo, porque el patrón coincide
+    #    también con abreviaturas normativas del tipo "C. Penal".
     for m in _PERSONA_INICIAL_RE.finditer(texto):
         if _tiene_formula_judicial(m.group(1)):
             continue
         agregar(m.group(1), m.start(1), False)
 
-    # 4. Secuencias capitalizadas con ancla en el diccionario.
+    for m in _PERSONA_INICIALES_PREFIJO_RE.finditer(texto):
+        candidato = m.group(1)
+        if _tiene_formula_judicial(candidato):
+            continue
+        if not _tiene_ancla_de_diccionario(candidato):
+            continue
+        agregar(candidato, m.start(1), False)
+
+    # 4. Secuencias capitalizadas con ancla en el diccionario. Es la única
+    #    regla que depende del catálogo, y por eso la que el modo preciso
+    #    endurece: exige que el candidato traiga a la vez un nombre de pila y
+    #    un apellido conocidos, en lugar de cualquiera de los dos.
     for patron in (_PERSONA_CAPITALIZADA_RE, _PERSONA_MAYUSCULAS_RE):
         for m in patron.finditer(texto):
             candidato = m.group(1)
             if _tiene_formula_judicial(candidato):
                 continue
-            if not _tiene_ancla_de_diccionario(candidato):
+            if preciso:
+                if not _tiene_nombre_y_apellido(candidato):
+                    continue
+            elif not _tiene_ancla_de_diccionario(candidato):
                 continue
             agregar(candidato, m.start(1), False)
 
@@ -749,9 +822,17 @@ def _ip_valida(valor: str) -> bool:
         return False
 
 
-def _detectar_otro(texto: str) -> list[tuple[int, int, str, bool]]:
+# Patrones de "Otros sensibles" que no llevan rótulo delante y se reconocen
+# solo por su forma. Son los más expuestos a coincidir por azar con una cifra
+# del escrito, de modo que el modo preciso prescinde de ellos.
+_OTRO_SIN_ROTULO = frozenset({"tarjeta", "ip", "usuario_red"})
+
+
+def _detectar_otro(texto: str, preciso: bool = False) -> list[tuple[int, int, str, bool]]:
     hallazgos: list[tuple[int, int, str, bool]] = []
     for nombre, patron in _OTRO_COMPILADOS:
+        if preciso and nombre in _OTRO_SIN_ROTULO:
+            continue
         for m in patron.finditer(texto):
             valor = m.group(1).strip()
             if not valor:
@@ -784,6 +865,7 @@ PRIORIDAD_CATEGORIAS = (
 def detect_regex_cl(texto: str, sensibilidad: str = "exhaustiva") -> list[RawItem]:
     """Aplica todos los detectores determinísticos sobre el texto."""
     exhaustivo = sensibilidad == "exhaustiva"
+    preciso = sensibilidad == "precisa"
 
     por_categoria: dict[str, list[tuple[int, int, str, bool]]] = {
         "CAUSA": _detectar_causa(texto, exhaustivo),
@@ -793,11 +875,11 @@ def detect_regex_cl(texto: str, sensibilidad: str = "exhaustiva") -> list[RawIte
             for m in _EMAIL_RE.finditer(texto)
         ],
         "TELEFONO": _detectar_telefono(texto, exhaustivo),
-        "PATENTE": _detectar_patente(texto),
-        "OTRO": _detectar_otro(texto),
-        "DOMICILIO": _detectar_domicilio(texto),
+        "PATENTE": _detectar_patente(texto, preciso),
+        "OTRO": _detectar_otro(texto, preciso),
+        "DOMICILIO": _detectar_domicilio(texto, preciso),
         "ORGANIZACION": _detectar_organizacion(texto),
-        "PERSONA": _detectar_persona(texto, exhaustivo),
+        "PERSONA": _detectar_persona(texto, exhaustivo, preciso),
     }
 
     items: list[RawItem] = []

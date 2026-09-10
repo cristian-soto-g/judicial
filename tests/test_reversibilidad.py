@@ -139,3 +139,71 @@ class TestMapa:
     def test_rechaza_un_archivo_que_no_es_un_mapa(self):
         with pytest.raises(ErrorMapa):
             leer_mapa_cifrado(b"esto no es un mapa", FRASE)
+
+
+class TestIdentidadesUnificadas:
+    """Confirmar una identidad no debe impedir la reversión.
+
+    Es la interacción entre dos funciones que, mal resuelta, deja al usuario
+    ante una contradicción: la aplicación le ofrece unificar las variantes de un
+    mismo nombre y después le niega el mapa por haberlo hecho.
+    """
+
+    TEXTO = (
+        "Declaró don Marcos Ferreira Soto sobre los hechos. El acta consigna a "
+        "don Marcos Ferreyra Soto como el mismo compareciente."
+    )
+
+    def _con_identidad_confirmada(self, analizar):
+        from app.services.clusters import confirm_cluster
+
+        estado, resultado = analizar(self.TEXTO)
+        assert resultado.clusters, "el motor debía sugerir la identidad"
+        confirm_cluster(estado, resultado.clusters[0].cluster_id)
+        return estado
+
+    def test_permite_generar_el_mapa(self, analizar):
+        estado = self._con_identidad_confirmada(analizar)
+        mapa = construir_mapa(estado)
+        assert mapa["identidades_unificadas"] == 1
+
+    def test_registra_la_forma_canonica_y_sus_variantes(self, analizar):
+        estado = self._con_identidad_confirmada(analizar)
+        entrada = next(e for e in construir_mapa(estado)["entradas"] if e.get("variantes"))
+        # La forma canónica es la más extensa, que individualiza mejor.
+        assert entrada["original"] == "Marcos Ferreira Soto"
+        assert entrada["variantes"] == ["Marcos Ferreyra Soto"]
+
+    def test_la_reversion_restituye_la_forma_canonica(self, analizar):
+        estado = self._con_identidad_confirmada(analizar)
+        anonimizado = anonymize_text(self.TEXTO, estado.detections)
+        assert "Ferreira" not in anonimizado and "Ferreyra" not in anonimizado
+
+        restituido, _, faltantes = revertir_texto(anonimizado, construir_mapa(estado))
+        assert faltantes == []
+        # Ambas apariciones recuperan la forma canónica: el documento vuelve a
+        # identificar a la persona, aunque no reproduzca cada grafía original.
+        assert restituido.count("Marcos Ferreira Soto") == 2
+
+    def test_sigue_rechazando_la_ambiguedad_real(self, analizar):
+        # Personas distintas bajo una misma etiqueta: aquí la reversión sí
+        # sería imposible y el rechazo debe mantenerse.
+        estado, _ = analizar(
+            "Declararon don Juan Pérez Muñoz y doña Ana Painemal Soto.",
+            label_mode="gen",
+        )
+        with pytest.raises(ErrorMapa):
+            construir_mapa(estado)
+
+    def test_el_mensaje_se_adapta_a_la_causa(self, analizar):
+        from app.models.schemas import Detection, Position
+
+        estado, _ = analizar(self.TEXTO)
+        # Sustituciones repetidas a mano, con el modo categorizado activo: el
+        # remedio no es cambiar de modo sino confirmar la identidad.
+        for deteccion in estado.detections:
+            deteccion.placeholder = "[PERSONA_1]"
+            deteccion.cluster_id = None
+        with pytest.raises(ErrorMapa) as error:
+            construir_mapa(estado)
+        assert "Identidades" in str(error.value)

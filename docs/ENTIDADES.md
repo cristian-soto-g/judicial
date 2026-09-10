@@ -202,8 +202,23 @@ Tres niveles regulan el equilibrio entre detectar de más y detectar de menos:
 | Nivel | Comportamiento |
 |---|---|
 | **Exhaustiva** (predeterminado) | Incorpora las reglas más ambiguas: teléfonos de nueve dígitos sin separadores, identificadores de causa sin rótulo y apellidos sueltos tras un rol procesal aunque no figuren en el catálogo. |
-| **Equilibrada** | Omite esas reglas. |
-| **Precisa** | Igual que la anterior; se reserva para exigir más evidencia por detección en versiones futuras. |
+| **Equilibrada** | Omite esas tres reglas y conserva todo lo demás. |
+| **Precisa** | Omite además lo que se reconoce solo por su forma, sin rótulo que lo respalde. |
+
+En el nivel **preciso**, en concreto:
+
+- Los nombres detectados sin ninguna señal de contexto deben traer **a la vez**
+  un nombre de pila y un apellido presentes en el catálogo, en lugar de
+  cualquiera de los dos. Las reglas de contexto no cambian: siguen operando sin
+  consultar el diccionario, de modo que este endurecimiento no introduce sesgo
+  por origen del apellido.
+- Los domicilios deben incluir numeración. Sin ella, la captura suele ser el
+  nombre de un lugar y no el domicilio de nadie.
+- De las patentes sin rótulo solo se admite el formato vigente de cuatro letras
+  y dos dígitos, que es inequívoco.
+- De «Otros sensibles» se descartan los patrones sin rótulo —dirección IP,
+  número de tarjeta y nombre de usuario—, que son los más expuestos a coincidir
+  por azar con una cifra del escrito.
 
 El nivel exhaustivo es el predeterminado por una razón de fondo: un falso
 positivo se descarta con un clic en la pantalla de revisión, mientras que un

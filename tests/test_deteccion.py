@@ -194,3 +194,84 @@ class TestCatalogoDeCategorias:
             "Juzgado de Garantía de Santiago. NUE 1234567."
         )
         assert set(detectar(texto)) <= set(CATEGORIAS)
+
+
+class TestCategoriasDesactivadas:
+    """El descarte de categorías no debe arrastrar consigo otras detecciones."""
+
+    TEXTO = "Compareció la empresa Juan Pérez Muñoz Ltda. en representación."
+
+    def test_desactivar_organizaciones_no_oculta_a_la_persona(self, detectar):
+        # Regresión de un defecto de privacidad. La organización abarca al
+        # nombre y tiene prioridad sobre él; si el descarte de categorías se
+        # aplicara después de resolver los solapamientos, la persona
+        # desaparecería junto con la organización que la contenía.
+        detectados = detectar(self.TEXTO, enabled_categories=["PERSONA"])
+        assert detectados.get("PERSONA"), (
+            "Con solo «Personas» activa, el nombre debe detectarse aunque una "
+            "organización descartada lo abarcara."
+        )
+        assert "Juan Pérez Muñoz" in detectados["PERSONA"]
+
+    def test_respeta_la_seleccion_de_categorias(self, detectar):
+        detectados = detectar(self.TEXTO, enabled_categories=["ORGANIZACION"])
+        assert set(detectados) == {"ORGANIZACION"}
+
+    def test_no_atribuye_el_sufijo_societario_a_la_persona(self, detectar):
+        detectados = detectar(self.TEXTO, enabled_categories=["PERSONA"])
+        assert all("Ltda" not in p for p in detectados["PERSONA"])
+
+
+class TestSensibilidad:
+    """Los tres niveles deben producir resultados efectivamente distintos."""
+
+    TEXTO = (
+        "En autos O-1234-2023 se resolvió. Su número es 987654321 según consta. "
+        "El testigo Zbigniew declaró. El vehículo XY·1234 fue incautado. "
+        "La conexión provino de 192.168.1.45."
+    )
+
+    def _cantidad(self, detectar, nivel: str) -> int:
+        return sum(len(v) for v in detectar(self.TEXTO, sensibilidad=nivel).values())
+
+    def test_la_exhaustiva_detecta_mas_que_la_equilibrada(self, detectar):
+        assert self._cantidad(detectar, "exhaustiva") > self._cantidad(
+            detectar, "equilibrada"
+        )
+
+    def test_la_precisa_no_detecta_mas_que_la_equilibrada(self, detectar):
+        assert self._cantidad(detectar, "precisa") <= self._cantidad(
+            detectar, "equilibrada"
+        )
+
+    def test_la_exhaustiva_suma_las_reglas_ambiguas(self, detectar):
+        detectados = detectar(self.TEXTO, sensibilidad="exhaustiva")
+        # Identificador de causa sin rótulo, teléfono de nueve dígitos sin
+        # separadores y apellido ausente del catálogo tras un rol procesal.
+        assert "O-1234-2023" in detectados.get("CAUSA", [])
+        assert "987654321" in detectados.get("TELEFONO", [])
+        assert "Zbigniew" in detectados.get("PERSONA", [])
+
+    def test_la_equilibrada_prescinde_de_ellas(self, detectar):
+        detectados = detectar(self.TEXTO, sensibilidad="equilibrada")
+        assert "O-1234-2023" not in detectados.get("CAUSA", [])
+        assert "987654321" not in detectados.get("TELEFONO", [])
+        assert "Zbigniew" not in detectados.get("PERSONA", [])
+
+    def test_la_precisa_descarta_lo_que_no_lleva_rotulo(self, detectar):
+        precisa = detectar(self.TEXTO, sensibilidad="precisa")
+        equilibrada = detectar(self.TEXTO, sensibilidad="equilibrada")
+        # Dirección IP y patente de formato antiguo: se reconocen solo por su
+        # forma y son las más expuestas a coincidir por azar.
+        assert "192.168.1.45" in equilibrada.get("OTRO", [])
+        assert "192.168.1.45" not in precisa.get("OTRO", [])
+        assert "XY·1234" not in precisa.get("PATENTE", [])
+
+    def test_la_precisa_exige_nombre_y_apellido_conocidos(self, detectar):
+        texto = "En la audiencia de juicio oral, Ana Painemal Quilaqueo expuso."
+        assert detectar(texto, sensibilidad="precisa").get("PERSONA")
+
+        # Un apellido conocido sin nombre de pila que lo ancle ya no basta.
+        texto_debil = "En la audiencia de juicio oral, Painemal Quilaqueo expuso."
+        assert not detectar(texto_debil, sensibilidad="precisa").get("PERSONA")
+        assert detectar(texto_debil, sensibilidad="exhaustiva").get("PERSONA")

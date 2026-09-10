@@ -59,6 +59,23 @@ sesión, ni en el archivo. La interfaz la borra apenas se usa. Es una decisión
 de diseño y no una omisión: si la pierde, la reversión es imposible. Anótela en
 un lugar seguro y distinto de donde guarde el mapa.
 
+**Qué restituye exactamente la reversión**
+
+Cuando durante la revisión se confirma una identidad —varias formas de nombrar
+a la misma persona pasan a compartir una sola sustitución—, el mapa registra la
+forma más completa como canónica y anota las demás como variantes. La reversión
+restituye entonces la forma canónica en todas las apariciones.
+
+Dicho de otro modo: el documento restituido vuelve a identificar a las mismas
+personas, pero no reproduce el original carácter por carácter. Si necesita una
+restitución literal, no confirme identidades y conserve cada variante como una
+detección propia.
+
+La aplicación sí rechaza generar el mapa cuando personas **distintas** comparten
+una etiqueta, que es lo que ocurre con los modos de etiquetado genérico y de
+iniciales. Ahí la reversión sería imposible y entregar un mapa parcial induciría
+a error.
+
 **Riesgos que subsisten**
 
 - Si el mapa y el documento anonimizado se comparten juntos, la anonimización

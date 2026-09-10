@@ -93,10 +93,20 @@ def run_detection(
 
     check_cancel(session_id)
     items = apply_quality_filters(items, texto)
-    items = _resolver_solapamientos(items)
 
+    # El orden de estas dos operaciones no es indiferente. Las categorías que
+    # el usuario desactivó deben descartarse ANTES de resolver los
+    # solapamientos, nunca después: si una mención descartada participara de la
+    # resolución, podría desplazar a otra que sí interesa y esta última se
+    # perdería sin dejar rastro. Es un fallo de privacidad, no de precisión.
+    # Ejemplo concreto: en "la empresa Juan Pérez Muñoz Ltda." la organización
+    # abarca al nombre y tiene prioridad sobre él; con la categoría de
+    # organizaciones desactivada, resolver primero eliminaría el nombre de la
+    # persona junto con la organización que lo contenía.
     if enabled_categories is not None:
         permitidas = set(enabled_categories)
         items = [item for item in items if item.cat in permitidas]
+
+    items = _resolver_solapamientos(items)
 
     return raw_to_mentions(items)
