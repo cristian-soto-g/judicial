@@ -127,10 +127,16 @@ aplicación la volverá a crear en el siguiente arranque.
 
 ---
 
-## Si prefiere una aplicación empaquetada
+## La alternativa más simple: el paquete ya construido
 
-Es posible construir un `.app` de macOS que se abra como cualquier otro
-programa, sin Terminal ni instalación previa de Python. Requiere compilarlo en
-un Mac —las herramientas de empaquetado no permiten hacerlo desde otro sistema
-operativo—, sea en su propio equipo o mediante un servicio de compilación
-automática. Si le interesa, puede pedirse.
+Todo lo anterior deja de ser necesario si usa el paquete portable de la
+sección **[Releases](https://github.com/cristian-soto-g/judicial/releases)**
+del repositorio. Ese archivo trae la aplicación ya compilada: no requiere
+instalar Python ni ninguna otra cosa.
+
+Descárguelo, descomprímalo y, la primera vez, haga clic derecho sobre
+`INICIAR.sh` y elija **Abrir** —el paquete no está firmado ante Apple, de modo
+que el sistema lo bloquea por defecto—. Después bastará con abrirlo.
+
+Los paquetes se construyen para Mac con procesador Apple Silicon. En un Mac
+Intel, siga las instrucciones desde el código fuente de este documento.

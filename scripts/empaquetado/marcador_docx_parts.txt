@@ -1,0 +1,13 @@
+Este archivo existe por una sola razón: obligar a que la carpeta
+docx/parts/ se cree dentro del paquete.
+
+python-docx localiza sus plantillas XML con una ruta relativa que sube un
+nivel desde su propio módulo: docx/parts/../templates/default-header.xml.
+Al resolver esa ruta, el sistema operativo recorre cada tramo y exige que
+todos existan, incluido docx/parts/. En una distribución de PyInstaller ese
+directorio no llega a materializarse, porque los módulos viven comprimidos
+dentro del archivo del programa y no como archivos sueltos en el disco.
+
+El resultado, sin este marcador, es que el paquete arranca sin errores y
+falla recién cuando el usuario abre su primer documento Word, con un
+mensaje que menciona un archivo que sí está presente.

@@ -145,7 +145,16 @@ async def estado():
     }
 
 
-def run_server(abrir_navegador: bool = True) -> None:
+def puerto_ocupado(host: str = HOST, puerto: int = PORT) -> bool:
+    """Indica si ya hay algo escuchando en el puerto de la aplicación."""
+    import socket
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as conexion:
+        conexion.settimeout(0.4)
+        return conexion.connect_ex((host, puerto)) == 0
+
+
+def run_server(abrir_navegador: bool = True) -> int:
     """Levanta el servidor local y abre el navegador."""
     import uvicorn
 
@@ -157,8 +166,31 @@ def run_server(abrir_navegador: bool = True) -> None:
         sys.stderr = open(os.devnull, "w", encoding="utf-8")
 
     url = f"http://{HOST}:{PORT}"
+
+    # Si el puerto está tomado, lo más probable es que la aplicación ya esté
+    # abierta. Conviene decirlo con claridad y llevar allí al usuario, en lugar
+    # de fallar con un error de red que no significa nada para quien lo lee.
+    if puerto_ocupado():
+        logger.warning(
+            "El puerto %s ya está en uso. Es probable que la aplicación esté "
+            "abierta en otra ventana. Se intentará abrirla en el navegador.",
+            PORT,
+        )
+        if abrir_navegador:
+            try:
+                webbrowser.open(url)
+            except Exception:  # pragma: no cover - depende del entorno gráfico
+                pass
+        logger.warning(
+            "Si no era la aplicación, cierre el programa que ocupa el puerto "
+            "%s y vuelva a intentarlo.",
+            PORT,
+        )
+        return 1
+
     logger.info("%s %s", APP_NAME, APP_VERSION)
     logger.info("Procesamiento local. Abra %s en su navegador.", url)
+    logger.info("Para cerrar la aplicación, presione Control+C en esta ventana.")
 
     if abrir_navegador:
         try:
@@ -166,8 +198,19 @@ def run_server(abrir_navegador: bool = True) -> None:
         except Exception:  # pragma: no cover - depende del entorno gráfico
             logger.info("No se pudo abrir el navegador automáticamente.")
 
-    uvicorn.run(app, host=HOST, port=PORT, log_level="warning")
+    try:
+        uvicorn.run(app, host=HOST, port=PORT, log_level="warning")
+    except KeyboardInterrupt:  # pragma: no cover - interacción del usuario
+        pass
+    finally:
+        # Las sesiones viven en memoria; al cerrar no debe quedar rastro del
+        # contenido de los documentos procesados.
+        descartadas = store.clear()
+        if descartadas:
+            logger.info("Se descartaron %d sesiones de la memoria.", descartadas)
+
+    return 0
 
 
 if __name__ == "__main__":
-    run_server()
+    raise SystemExit(run_server())

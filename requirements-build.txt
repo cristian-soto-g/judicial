@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Herramienta de empaquetado. Solo se necesita para construir la distribución
+# portable; no forma parte de la aplicación ni se incluye en el paquete.
+pyinstaller>=6.10,<7.0

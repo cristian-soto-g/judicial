@@ -50,15 +50,33 @@ en [docs/ENTIDADES.md](docs/ENTIDADES.md).
 
 ## Instalación y uso
 
-Requiere **Python 3.11 o superior**. No existe todavía una descarga
-empaquetada: lo que se descarga es el código fuente, y un archivo de arranque
-prepara el entorno con un doble clic.
+### Descarga lista para usar (recomendada)
 
-**En macOS**: siga la guía paso a paso de
-[docs/INSTALACION_MAC.md](docs/INSTALACION_MAC.md), pensada para hacerlo sin
-usar la terminal. En resumen: instale Python desde
+En la sección **[Releases](https://github.com/cristian-soto-g/judicial/releases)**
+del repositorio hay un paquete para Windows y otro para macOS. No requieren
+instalar Python, ni permisos de administrador, ni instalación alguna:
+se descomprimen y se abren con un doble clic. Para desinstalar, se borra la
+carpeta.
+
+En Windows, doble clic en `INICIAR.bat`. En macOS, clic derecho sobre
+`INICIAR.sh` y elegir Abrir la primera vez, porque el paquete no está firmado
+ante Apple; los detalles están en
+[docs/INSTALACION_MAC.md](docs/INSTALACION_MAC.md).
+
+Cada archivo viene con su suma de verificación SHA-256 para comprobar la
+descarga.
+
+El paquete no incluye la capa opcional de lenguaje natural, por la licencia
+GPL-3.0 del modelo. La detección funciona sin ella.
+
+### Desde el código fuente
+
+Requiere **Python 3.11 o superior**.
+
+**En macOS**: instale Python desde
 [python.org](https://www.python.org/downloads/macos/), descargue y descomprima
-el proyecto, y haga doble clic en **`INICIAR.command`**.
+el proyecto, y haga doble clic en **`INICIAR.command`**. La guía completa está
+en [docs/INSTALACION_MAC.md](docs/INSTALACION_MAC.md).
 
 **En Windows**: descargue y descomprima el proyecto, y haga doble clic en
 **`INICIAR.bat`**.
@@ -184,6 +202,9 @@ data/           catálogos de nombres, apellidos y vocabulario forense
 ```
 
 Los catálogos se regeneran con `python scripts/generar_diccionarios.py`.
+
+La construcción y publicación del paquete portable están documentadas en
+[docs/EMPAQUETADO.md](docs/EMPAQUETADO.md).
 
 ## Licencia
 

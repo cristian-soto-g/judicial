@@ -1,0 +1,196 @@
+name: Paquete portable
+
+# Construye la distribución portable y la deja disponible para descargar.
+#
+# Dos formas de usarlo:
+#
+#   1. Publicar una versión. Cree y empuje una etiqueta que comience con "v":
+#          git tag v1.0.0 && git push origin v1.0.0
+#      El paquete queda publicado en la sección «Releases» del repositorio,
+#      con su suma de verificación, listo para que cualquiera lo descargue.
+#
+#   2. Probar sin publicar. Desde la pestaña «Actions» de GitHub, elija este
+#      flujo y presione «Run workflow». El paquete queda como artefacto
+#      descargable durante catorce días, sin crear una versión pública.
+#
+# La compilación ocurre en los equipos de GitHub porque un ejecutable de
+# Windows solo puede construirse en Windows, y uno de macOS solo en macOS.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Identificador de la compilación (por ejemplo, v1.0.0-pruebas)'
+        required: false
+        default: 'prueba'
+      incluir_macos:
+        description: '¿Construir también el paquete de macOS?'
+        type: boolean
+        required: false
+        default: true
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  construir:
+    name: ${{ matrix.nombre }}
+    runs-on: ${{ matrix.sistema }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sistema: windows-latest
+            nombre: Windows x64
+            etiqueta: Windows-x64
+          - sistema: macos-latest
+            nombre: macOS Apple Silicon
+            etiqueta: macOS-AppleSilicon
+
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-build.txt -r requirements-dev.txt
+
+      - name: Ejecutar las pruebas
+        # No tiene sentido publicar un paquete cuya suite no pasa. Las pruebas
+        # de la capa opcional de lenguaje natural se omiten solas, porque esa
+        # capa no forma parte de la distribución.
+        run: python -m pytest -q
+
+      - name: Construir el paquete
+        shell: bash
+        run: |
+          if [ -n "${GITHUB_REF_NAME:-}" ] && [[ "$GITHUB_REF_NAME" == v* ]]; then
+            VERSION="$GITHUB_REF_NAME"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          python scripts/construir_paquete.py --sufijo "${VERSION}-${{ matrix.etiqueta }}"
+
+      - name: Verificar el paquete construido
+        # Prueba de humo contra el ejecutable ya armado: recorre la carga de
+        # los tres formatos, el análisis, la exportación y la reversión. Es lo
+        # que distingue un paquete que arranca de uno que sirve.
+        run: python scripts/probar_paquete.py
+
+      - name: Calcular la suma de verificación
+        shell: bash
+        run: |
+          cd dist
+          for archivo in *.zip; do
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum "$archivo" > "$archivo.sha256"
+            else
+              shasum -a 256 "$archivo" > "$archivo.sha256"
+            fi
+            cat "$archivo.sha256"
+          done
+
+      - name: Guardar el paquete como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: anonimizador-${{ matrix.etiqueta }}
+          path: |
+            dist/*.zip
+            dist/*.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  publicar:
+    name: Publicar la versión
+    needs: construir
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v4
+
+      - name: Reunir los paquetes construidos
+        uses: actions/download-artifact@v4
+        with:
+          path: paquetes
+          merge-multiple: true
+
+      - name: Publicar en la sección de versiones
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notas.md <<'NOTAS'
+          ## Anonimizador Judicial Chile
+
+          Aplicación de uso personal para anonimizar documentos judiciales
+          chilenos, con procesamiento íntegramente local: el documento no sale
+          del equipo en ningún momento.
+
+          ### Cómo instalarla
+
+          **Windows**: descargue el archivo que termina en `Windows-x64.zip`,
+          descomprímalo y haga doble clic en `INICIAR.bat`. No requiere
+          instalar Python ni permisos de administrador. Para desinstalarla,
+          borre la carpeta.
+
+          **macOS**: descargue el archivo que termina en
+          `macOS-AppleSilicon.zip` y descomprímalo. La primera vez, haga clic
+          derecho sobre `INICIAR.sh` y elija Abrir, porque el paquete no está
+          firmado ante Apple y el sistema lo bloquea por defecto. Los detalles
+          están en `docs/INSTALACION_MAC.md`.
+
+          ### Verificar la descarga
+
+          Cada archivo viene acompañado de su suma de verificación SHA-256, en
+          el archivo `.sha256` correspondiente. En Windows:
+
+          ```
+          certutil -hashfile NOMBRE_DEL_ARCHIVO.zip SHA256
+          ```
+
+          ### Qué incluye y qué no
+
+          El paquete trae la detección determinística completa: las nueve
+          categorías, la revisión humana, la exportación y la reversibilidad
+          cifrada.
+
+          No incluye la capa opcional de reconocimiento de entidades por modelo
+          de lenguaje, porque ese modelo se distribuye bajo licencia GPL-3.0 e
+          incorporarlo sometería toda la distribución a esa licencia. La
+          detección funciona sin ella; quien la quiera puede añadirla
+          ejecutando la aplicación desde el código fuente.
+
+          Tampoco incluye reconocimiento óptico de caracteres: un PDF escaneado
+          será rechazado con un aviso explícito.
+
+          ### Antes de usarla
+
+          La detección automática no es completa. Revise siempre el resultado
+          antes de compartir un documento.
+
+          ### Origen
+
+          Basada en el Anonimizador Judicial de IALAB — Laboratorio de
+          Innovación e Inteligencia Artificial, Facultad de Derecho,
+          Universidad de Buenos Aires, bajo licencia Apache 2.0. Esta obra
+          derivada la adapta al ordenamiento chileno y no está afiliada a IALAB
+          ni cuenta con su patrocinio.
+          NOTAS
+
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "Anonimizador Judicial Chile ${GITHUB_REF_NAME}" \
+            --notes-file notas.md \
+            paquetes/*.zip paquetes/*.sha256
