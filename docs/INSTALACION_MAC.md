@@ -135,8 +135,14 @@ del repositorio. Ese archivo trae la aplicación ya compilada: no requiere
 instalar Python ni ninguna otra cosa.
 
 Descárguelo, descomprímalo y, la primera vez, haga clic derecho sobre
-`INICIAR.sh` y elija **Abrir** —el paquete no está firmado ante Apple, de modo
-que el sistema lo bloquea por defecto—. Después bastará con abrirlo.
+**`INICIAR.command`** y elija **Abrir** —el paquete no está firmado ante
+Apple, de modo que el sistema lo bloquea por defecto—. Después bastará con el
+doble clic.
+
+Es el mismo nombre de archivo que en el código fuente, y por la misma razón:
+el Finder asocia la extensión `.command` con la Terminal y la ejecuta al
+hacer doble clic, mientras que un archivo `.sh` se abriría en un editor de
+texto sin arrancar nada.
 
 Los paquetes se construyen para Mac con procesador Apple Silicon. En un Mac
 Intel, siga las instrucciones desde el código fuente de este documento.

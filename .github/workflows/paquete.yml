@@ -155,8 +155,9 @@ jobs:
           borre la carpeta.
 
           **macOS**: descargue el archivo que termina en
-          `macOS-AppleSilicon.zip` y descomprímalo. Está construido para Mac
-          con procesador Apple Silicon.
+          `macOS-AppleSilicon.zip`, descomprímalo y haga doble clic en
+          `INICIAR.command`. Está construido para Mac con procesador Apple
+          Silicon.
 
           ### La primera vez, el sistema le advertirá
 
@@ -168,8 +169,9 @@ jobs:
           su PC». Presione **Más información** y luego **Ejecutar de todas
           formas**.
 
-          En **macOS**, haga clic derecho sobre `INICIAR.sh`, elija **Abrir** y
-          confirme. Los detalles están en `docs/INSTALACION_MAC.md`.
+          En **macOS**, haga clic derecho sobre `INICIAR.command`, elija
+          **Abrir** y confirme. Los detalles están en
+          `docs/INSTALACION_MAC.md`.
 
           ### Verificar la descarga
 

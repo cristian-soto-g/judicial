@@ -35,7 +35,7 @@ Anonimización local de documentos judiciales chilenos.
 
 CÓMO ABRIRLA
 ------------
-Haga doble clic en INICIAR.bat (Windows) o ejecute ./INICIAR.sh (macOS y Linux).
+{lanzador}
 
 Se abrirá una ventana con el estado de la aplicación y, enseguida, su navegador
 en la dirección http://127.0.0.1:8799
@@ -53,7 +53,7 @@ En Windows aparecerá una ventana azul que dice "Windows protegió su PC".
 Presione "Más información" y luego "Ejecutar de todas formas".
 
 En macOS aparecerá un aviso sobre un desarrollador no identificado. Haga clic
-derecho sobre INICIAR.sh, elija "Abrir" y confirme.
+derecho sobre INICIAR.command, elija "Abrir" y confirme.
 
 Puede comprobar que el archivo descargado es el correcto contrastando su suma
 de verificación SHA-256 con la publicada junto a la descarga. En Windows:
@@ -112,13 +112,47 @@ chcp 65001 >nul
 if errorlevel 1 pause
 """
 
+# En macOS el archivo debe llamarse .command: el Finder asocia esa extensión
+# con la Terminal y la ejecuta al hacer doble clic. Un archivo .sh, en cambio,
+# se abre en un editor de texto y no arranca nada, de modo que entregarlo en el
+# paquete equivaldría a no entregar lanzador alguno.
+LANZADOR_COMMAND = """\
+#!/usr/bin/env bash
+# {app} - arranque en macOS. Haga doble clic en este archivo.
+#
+# Si el sistema advierte que proviene de un desarrollador no identificado,
+# haga clic derecho sobre el archivo y elija "Abrir".
+set -euo pipefail
+cd "$(dirname "$0")"
+"./{nombre}/{nombre}" "$@"
+"""
+
 LANZADOR_SH = """\
 #!/usr/bin/env bash
-# {app} — arranque en macOS y Linux.
+# {app} - arranque en Linux.
 set -euo pipefail
 cd "$(dirname "$0")"
 exec "./{nombre}/{nombre}" "$@"
 """
+
+# Cada paquete lleva únicamente el lanzador de su sistema. El ejecutable que
+# contiene solo corre en esa plataforma, de manera que incluir los demás solo
+# sembraría dudas sobre cuál abrir.
+LANZADORES = {
+    "Windows": ("INICIAR.bat", "LANZADOR_BAT", "\r\n", "Haga doble clic en INICIAR.bat."),
+    "Darwin": (
+        "INICIAR.command",
+        "LANZADOR_COMMAND",
+        "\n",
+        "Haga doble clic en INICIAR.command.",
+    ),
+    "Linux": (
+        "INICIAR.sh",
+        "LANZADOR_SH",
+        "\n",
+        "Ejecute ./INICIAR.sh desde una terminal.",
+    ),
+}
 
 
 def _ejecutar(comando: list[str]) -> None:
@@ -164,22 +198,25 @@ def armar_distribucion(carpeta_exe: Path) -> Path:
 
     shutil.move(str(carpeta_exe), str(distribucion / NOMBRE_PAQUETE))
 
+    instruccion = LANZADORES.get(platform.system(), LANZADORES["Linux"])[3]
     (distribucion / "LEEME.txt").write_text(
-        INSTRUCCIONES.format(app=APP_NAME, version=APP_VERSION), encoding="utf-8"
+        INSTRUCCIONES.format(app=APP_NAME, version=APP_VERSION, lanzador=instruccion),
+        encoding="utf-8",
     )
     for archivo in ("LICENSE", "NOTICE"):
         shutil.copy2(RAIZ / archivo, distribucion / archivo)
 
-    (distribucion / "INICIAR.bat").write_text(
-        LANZADOR_BAT.format(app=APP_NAME, nombre=NOMBRE_PAQUETE),
+    nombre_archivo, plantilla, salto, _ = LANZADORES.get(
+        platform.system(), LANZADORES["Linux"]
+    )
+    lanzador = distribucion / nombre_archivo
+    lanzador.write_text(
+        globals()[plantilla].format(app=APP_NAME, nombre=NOMBRE_PAQUETE),
         encoding="utf-8",
-        newline="\r\n",
+        newline=salto,
     )
-    lanzador_sh = distribucion / "INICIAR.sh"
-    lanzador_sh.write_text(
-        LANZADOR_SH.format(app=APP_NAME, nombre=NOMBRE_PAQUETE), encoding="utf-8"
-    )
-    lanzador_sh.chmod(0o755)
+    if nombre_archivo != "INICIAR.bat":
+        lanzador.chmod(0o755)
 
     return distribucion
 

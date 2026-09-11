@@ -59,7 +59,7 @@ se descomprimen y se abren con un doble clic. Para desinstalar, se borra la
 carpeta.
 
 En Windows, doble clic en `INICIAR.bat`. En macOS, clic derecho sobre
-`INICIAR.sh` y elegir Abrir; los detalles están en
+`INICIAR.command` y elegir Abrir; los detalles están en
 [docs/INSTALACION_MAC.md](docs/INSTALACION_MAC.md).
 
 La primera vez el sistema advertirá que el programa no está firmado. Es lo
