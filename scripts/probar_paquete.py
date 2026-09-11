@@ -52,6 +52,62 @@ class FalloDePrueba(Exception):
     """Alguna comprobación del paquete no se cumplió."""
 
 
+# Nombre del archivo con que el usuario abre la aplicación en cada sistema. En
+# macOS la extensión importa: el Finder asocia .command con la Terminal y la
+# ejecuta al hacer doble clic, mientras que un .sh se abriría en un editor de
+# texto sin arrancar nada.
+LANZADOR_ESPERADO = {
+    "Windows": "INICIAR.bat",
+    "Darwin": "INICIAR.command",
+    "Linux": "INICIAR.sh",
+}
+
+
+def carpeta_distribucion() -> Path:
+    return RAIZ / "dist" / f"{NOMBRE_PAQUETE}-portable"
+
+
+def comprobar_lanzador() -> None:
+    """Verifica que el paquete traiga el lanzador propio de este sistema.
+
+    Es la comprobación que faltaba cuando el paquete de macOS se entregó con un
+    INICIAR.sh: el ejecutable funcionaba, pero no había forma de abrirlo con
+    doble clic, que es justamente lo que una distribución portable promete.
+    """
+    esperado = LANZADOR_ESPERADO.get(platform.system(), "INICIAR.sh")
+    lanzador = carpeta_distribucion() / esperado
+
+    comprobar(lanzador.exists(), f"el paquete incluye {esperado}")
+
+    presentes = sorted(
+        archivo.name
+        for archivo in carpeta_distribucion().iterdir()
+        if archivo.name.startswith("INICIAR")
+    )
+    comprobar(
+        presentes == [esperado],
+        f"no incluye lanzadores de otros sistemas (presentes: {presentes})",
+    )
+
+    if platform.system() != "Windows":
+        comprobar(
+            bool(lanzador.stat().st_mode & 0o111),
+            f"{esperado} tiene permiso de ejecución",
+        )
+
+    contenido = lanzador.read_text(encoding="utf-8")
+    comprobar(
+        NOMBRE_PAQUETE in contenido,
+        f"{esperado} apunta al ejecutable del paquete",
+    )
+
+    instrucciones = (carpeta_distribucion() / "LEEME.txt").read_text(encoding="utf-8")
+    comprobar(
+        esperado in instrucciones,
+        f"las instrucciones nombran {esperado}",
+    )
+
+
 def ruta_ejecutable() -> Path:
     carpeta = RAIZ / "dist" / f"{NOMBRE_PAQUETE}-portable" / NOMBRE_PAQUETE
     nombre = NOMBRE_PAQUETE + (".exe" if platform.system() == "Windows" else "")
@@ -184,9 +240,22 @@ def probar_formato(nombre: str, contenido: bytes) -> str:
 
 
 def main() -> int:
-    ejecutable = ruta_ejecutable()
+    try:
+        ejecutable = ruta_ejecutable()
+    except FalloDePrueba as fallo:
+        print(f"FALLO: {fallo}", file=sys.stderr)
+        return 1
+
     print(f"Probando el paquete: {ejecutable.relative_to(RAIZ)}")
     print(f"Plataforma: {platform.system()} {platform.machine()}\n")
+
+    print("  Archivos del paquete:")
+    try:
+        comprobar_lanzador()
+    except FalloDePrueba as fallo:
+        print(f"\nFALLO: {fallo}", file=sys.stderr)
+        return 1
+    print()
 
     proceso = subprocess.Popen(
         [str(ejecutable), "--sin-abrir"],
