@@ -805,6 +805,15 @@ async function generarMapa() {
   }
 }
 
+/* Muestra el nombre del adjunto elegido, porque el control nativo queda oculto. */
+function mostrarNombreAdjunto(entrada) {
+  const destino = $(entrada.dataset.nombre);
+  if (!destino) return;
+  const archivo = entrada.files[0];
+  destino.textContent = archivo ? archivo.name : 'Ning\u00fan archivo seleccionado';
+  destino.classList.toggle('con-archivo', Boolean(archivo));
+}
+
 async function revertir() {
   const archivoMapa = $('archivoMapa').files[0];
   const archivoDocumento = $('archivoAnonimizado').files[0];
@@ -1004,6 +1013,9 @@ function conectarEventos() {
   $('reiniciar').addEventListener('click', reiniciar);
 
   // Reversibilidad
+  document.querySelectorAll('.campo-archivo input[type="file"]').forEach((entrada) => {
+    entrada.addEventListener('change', () => mostrarNombreAdjunto(entrada));
+  });
   $('generarMapa').addEventListener('click', generarMapa);
   $('botonRevertir').addEventListener('click', revertir);
   $('descargarRevertidoDocx').addEventListener('click', () => descargarRevertido('docx'));

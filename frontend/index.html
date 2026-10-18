@@ -55,15 +55,19 @@
 
       <div class="aviso aviso-info">
         <strong>Formatos admitidos</strong>
-        <ul>
-          <li><strong>Texto plano (.txt)</strong> — la lectura más fiable, sin metadatos.</li>
-          <li><strong>Word (.docx)</strong> — incluye tablas, encabezados y pies de página.</li>
-          <li><strong>PDF con texto seleccionable</strong> — para comprobarlo, intente seleccionar un párrafo con el cursor.</li>
-        </ul>
+        <dl class="lista-formatos">
+          <dt>Texto plano (.txt)</dt>
+          <dd>La lectura más fiable, sin metadatos.</dd>
+          <dt>Word (.docx)</dt>
+          <dd>Incluye tablas, encabezados y pies de página.</dd>
+          <dt>PDF con texto seleccionable</dt>
+          <dd>Para comprobarlo, intente seleccionar un párrafo con el cursor.</dd>
+        </dl>
         <p class="aviso-nota">
-          Esta aplicación <strong>no incluye reconocimiento óptico de caracteres</strong>.
-          Un PDF escaneado será rechazado, y si solo algunas páginas están
-          escaneadas se le advertirá cuáles quedaron fuera del análisis.
+          Esta aplicación <strong>no incluye reconocimiento óptico de
+          caracteres</strong>: un PDF escaneado será rechazado y, si solo
+          algunas páginas están escaneadas, se le advertirá cuáles quedaron
+          fuera del análisis.
         </p>
       </div>
 
@@ -409,11 +413,21 @@
             este equipo y nada queda almacenado.
           </p>
 
-          <label class="etiqueta-campo" for="archivoMapa">Archivo del mapa (.anonmap)</label>
-          <input type="file" class="campo" id="archivoMapa" accept=".anonmap,application/json">
+          <span class="etiqueta-campo" id="rotuloArchivoMapa">Archivo del mapa (.anonmap)</span>
+          <div class="campo-archivo">
+            <input type="file" id="archivoMapa" accept=".anonmap,application/json"
+                   aria-labelledby="rotuloArchivoMapa" data-nombre="nombreArchivoMapa">
+            <label class="boton boton-contorno boton-pequeno" for="archivoMapa">Elegir archivo</label>
+            <span class="campo-archivo-nombre" id="nombreArchivoMapa">Ningún archivo seleccionado</span>
+          </div>
 
-          <label class="etiqueta-campo" for="archivoAnonimizado">Documento anonimizado (.txt, .docx o PDF)</label>
-          <input type="file" class="campo" id="archivoAnonimizado" accept=".txt,.docx,.pdf">
+          <span class="etiqueta-campo" id="rotuloArchivoAnonimizado">Documento anonimizado (.txt, .docx o PDF)</span>
+          <div class="campo-archivo">
+            <input type="file" id="archivoAnonimizado" accept=".txt,.docx,.pdf"
+                   aria-labelledby="rotuloArchivoAnonimizado" data-nombre="nombreArchivoAnonimizado">
+            <label class="boton boton-contorno boton-pequeno" for="archivoAnonimizado">Elegir archivo</label>
+            <span class="campo-archivo-nombre" id="nombreArchivoAnonimizado">Ningún archivo seleccionado</span>
+          </div>
 
           <label class="etiqueta-campo" for="textoAnonimizado">O pegue aquí el texto anonimizado</label>
           <textarea class="campo area-pequena" id="textoAnonimizado" rows="5" placeholder="Pegue el texto si prefiere no adjuntar un archivo"></textarea>
