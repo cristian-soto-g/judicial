@@ -17,7 +17,7 @@ from app.runtime_paths import app_dir, bundle_dir
 # accesible desde la red local ni desde internet.
 HOST = "127.0.0.1"
 PORT = 8799
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.3"
 APP_NAME = "Anonimizador Judicial Chile"
 
 BUNDLE_DIR = bundle_dir()
