@@ -102,6 +102,26 @@ body {
 .pista-campo { margin: 0 0 .5rem; font-size: .82rem; color: var(--tinta-suave); }
 .pista-suave { font-style: italic; }
 
+/* ---------- Barra del documento en curso ---------- */
+/* El nombre ocupa el espacio sobrante y se recorta con puntos suspensivos; el
+ * contador conserva el suyo y nunca queda tapado por un nombre extenso. */
+.barra-documento {
+  display: flex; align-items: center; gap: .55rem;
+  margin-top: .9rem; padding: .5rem .85rem;
+  border: 1px solid var(--borde); border-radius: var(--radio);
+  background: var(--azul-claro); font-size: .85rem;
+}
+.barra-documento > svg { flex: 0 0 auto; color: var(--azul-medio); }
+.barra-documento-nombre {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 600; color: var(--azul-profundo);
+}
+.barra-documento-cuenta {
+  flex: 0 0 auto; white-space: nowrap;
+  color: var(--tinta-suave); font-size: .82rem;
+}
+
 /* ---------- Avisos ---------- */
 .aviso { border-radius: var(--radio); padding: .75rem 1rem; margin: 0 0 1rem; font-size: .88rem; border-left: 3px solid; }
 /* El rótulo del aviso ocupa su propia línea; el énfasis dentro del texto no. */
@@ -261,7 +281,9 @@ body {
 .panel-pestana.activo { display: block; }
 
 .filtros-tabla { display: flex; gap: .45rem; margin-bottom: .6rem; }
-.tabla-desplazable { height: 56vh; overflow-y: auto; border: 1px solid var(--borde); border-radius: 6px; }
+/* overflow en ambos ejes: en pantallas angostas la tabla no puede encogerse
+ * por debajo de su ancho mínimo, y sin esto desplazaba la página entera. */
+.tabla-desplazable { height: 56vh; overflow: auto; border: 1px solid var(--borde); border-radius: 6px; }
 table { width: 100%; border-collapse: collapse; font-size: .84rem; }
 thead th {
   position: sticky; top: 0; z-index: 1; background: var(--azul-claro);
@@ -329,10 +351,21 @@ td .campo { padding: .2rem .35rem; font-size: .8rem; }
 
 /* ---------- Adaptación a pantallas angostas ---------- */
 @media (max-width: 1020px) {
-  .panel-dividido, .rejilla-configuracion, .dos-columnas, .disposicion-editor { grid-template-columns: 1fr; }
+  /* minmax(0, 1fr) y no 1fr: el mínimo automático de una pista deja que un
+   * hijo ancho estire la columna más allá del contenedor. */
+  .panel-dividido, .rejilla-configuracion, .dos-columnas, .disposicion-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .formato-editor { border-right: none; border-bottom: 1px solid var(--borde); padding-right: 0; padding-bottom: 1rem; }
   .cuerpo-vista { height: 45vh; }
   .tabla-desplazable, .lista-grupos { height: 40vh; }
+}
+
+@media (max-width: 560px) {
+  /* Sin ancho para ambos en una línea, el contador baja en lugar de apretarse. */
+  .barra-documento { flex-wrap: wrap; row-gap: .2rem; }
+  .barra-documento-nombre { flex: 1 1 calc(100% - 2.2rem); }
+  .barra-documento-cuenta { flex-basis: 100%; }
 }
 
 @media (max-width: 820px) {

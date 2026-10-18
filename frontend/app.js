@@ -30,6 +30,7 @@ const MAPA_CATEGORIAS = Object.fromEntries(CATEGORIAS.map((c) => [c.clave, c]));
 const estado = {
   sessionId: null,
   nombreDocumento: '',
+  nombreArchivo: '',
   textoOriginal: '',
   textoAnonimizado: '',
   detecciones: [],
@@ -162,6 +163,31 @@ function irAPaso(numero) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+/* Barra persistente con el documento en curso. El nombre se recorta con puntos
+ * suspensivos y conserva el nombre completo en el atributo title; el contador
+ * vive en su propio elemento, de modo que un nombre extenso no pueda
+ * superponerse a él ni desplazarlo. */
+function dibujarBarraDocumento() {
+  const barra = $('barraDocumento');
+  if (!estado.sessionId) { barra.hidden = true; return; }
+  barra.hidden = false;
+
+  const nombre = estado.nombreArchivo || estado.nombreDocumento || 'Documento sin nombre';
+  const elemento = $('barraDocumentoNombre');
+  elemento.textContent = nombre;
+  elemento.title = nombre;
+
+  let cuenta = 'Sin analizar todavía';
+  if (estado.analizado) {
+    const total = estado.detecciones.length;
+    const activas = estado.detecciones.filter((deteccion) => deteccion.enabled).length;
+    cuenta =
+      `${total} ${total === 1 ? 'detección' : 'detecciones'} · ` +
+      `${activas} se ${activas === 1 ? 'reemplazará' : 'reemplazarán'}`;
+  }
+  $('barraDocumentoCuenta').textContent = cuenta;
+}
+
 /* ------------------------------------------------------------------ */
 /* Paso 1: carga del documento                                         */
 /* ------------------------------------------------------------------ */
@@ -181,6 +207,7 @@ async function cargarArchivo(archivo) {
 
     estado.sessionId = datos.session_id;
     estado.nombreDocumento = datos.doc_name;
+    estado.nombreArchivo = archivo.name;
     estado.detecciones = [];
     estado.grupos = [];
     estado.analizado = false;
@@ -195,6 +222,7 @@ async function cargarArchivo(archivo) {
     $('infoArchivo').innerHTML = informe;
 
     $('botonAnalizar').disabled = false;
+    dibujarBarraDocumento();
     notificar('Documento cargado. Configure el análisis y continúe.', 'exito');
     irAPaso(2);
   } catch (error) {
@@ -247,6 +275,7 @@ async function analizar() {
     estado.analizado = true;
 
     await cargarVistaPrevia();
+    dibujarBarraDocumento();
     dibujarEstadisticas();
     dibujarDetecciones();
     dibujarGrupos();
@@ -531,6 +560,7 @@ async function refrescar() {
   });
   estado.estadisticas = { ...conteos, TOTAL: estado.detecciones.length, OCURRENCIAS: ocurrencias };
 
+  dibujarBarraDocumento();
   dibujarVista();
   dibujarEstadisticas();
   dibujarDetecciones();
