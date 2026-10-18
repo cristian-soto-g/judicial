@@ -8,7 +8,6 @@ from __future__ import annotations
 from app.anonymize.apply import anonymize_text
 from app.export.docx_format import FORMATO_POR_DEFECTO, FormatoDocumento
 from app.models.schemas import ExportDocumentRequest, ExportFormatOptions, SessionState
-from app.services.analyze import prune_detections
 
 
 def formato_desde_opciones(opciones: ExportFormatOptions | None) -> FormatoDocumento:
@@ -30,8 +29,7 @@ def resolver_texto_exportacion(
     """Devuelve el texto a exportar: el editado por el usuario o el anonimizado."""
     if request.text is not None:
         return request.text
-    detecciones = prune_detections(state.detections, state.doc_text)
-    return anonymize_text(state.doc_text, detecciones)
+    return anonymize_text(state.doc_text, state.detections)
 
 
 def texto_a_parrafos(texto: str) -> list[str]:

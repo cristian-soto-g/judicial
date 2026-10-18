@@ -122,6 +122,11 @@ class SessionState(BaseModel):
     sensibilidad: Sensibilidad = "exhaustiva"
     enabled_categories: list[Categoria] = Field(default_factory=list)
     aviso_extraccion: str = ""
+    # Distingue "todavía no se analizó" de "se analizó y no se halló nada".
+    # Sin esa distinción, un documento que el motor considera limpio no
+    # podría exportarse, y el mensaje de error le pediría al usuario que
+    # analizara algo que ya analizó.
+    analizado: bool = False
 
 
 # --- Solicitudes y respuestas --------------------------------------------

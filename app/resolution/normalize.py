@@ -39,6 +39,30 @@ def strip_accents(texto: str) -> str:
     )
 
 
+def aplanar(texto: str) -> str:
+    """Normaliza conservando la longitud: un carácter de entrada, uno de salida.
+
+    Se usa para buscar texto cuyas posiciones se aplicarán después sobre el
+    documento original. `strip_accents` no sirve para eso: descompone cada
+    carácter y descarta las marcas, lo que para el español conserva la
+    longitud, pero no para todo. Una sílaba coreana se descompone en tres
+    letras que no son marcas, de modo que el texto normalizado queda más largo
+    y todas las posiciones siguientes se desplazan. La consecuencia no es un
+    error visible sino un reemplazo en el lugar equivocado: parte del nombre
+    permanece en el documento y se borra texto que debía conservarse.
+
+    Aquí cada carácter se sustituye por su forma base en minúscula, y si esa
+    conversión no produce exactamente un carácter —ocurre con algunas letras,
+    como la I con punto del turco— se conserva la base sin minusculizar.
+    """
+    salida: list[str] = []
+    for caracter in texto:
+        base = unicodedata.normalize("NFD", caracter)[:1] or caracter
+        minuscula = base.lower()
+        salida.append(minuscula if len(minuscula) == 1 else base)
+    return "".join(salida)
+
+
 def normalize_text(texto: str) -> str:
     """Minúsculas, sin acentos y con los espacios colapsados."""
     resultado = texto.lower().strip()

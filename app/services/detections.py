@@ -11,7 +11,7 @@ import re
 
 from app.anonymize.placeholders import make_placeholder
 from app.models.schemas import Detection, Mention, Position, SessionState
-from app.resolution.normalize import strip_accents
+from app.resolution.normalize import aplanar
 
 
 def _siguiente_id_mencion(state: SessionState) -> str:
@@ -27,13 +27,18 @@ def _contador_categoria(state: SessionState, cat: str) -> int:
 
 
 def _buscar_ocurrencias(texto: str, superficie: str) -> list[Position]:
-    """Busca todas las apariciones del texto, sin distinguir acentos ni mayúsculas."""
+    """Busca todas las apariciones del texto, sin distinguir acentos ni mayúsculas.
+
+    La normalización conserva la longitud del texto porque las posiciones que
+    se obtienen aquí se aplican después sobre el documento original: un solo
+    carácter de diferencia desplazaría todos los reemplazos siguientes.
+    """
     objetivo = superficie.strip()
     if not objetivo:
         return []
 
-    texto_plano = strip_accents(texto).lower()
-    objetivo_plano = strip_accents(objetivo).lower()
+    texto_plano = aplanar(texto)
+    objetivo_plano = aplanar(objetivo)
 
     posiciones: list[Position] = []
     for coincidencia in re.finditer(re.escape(objetivo_plano), texto_plano):

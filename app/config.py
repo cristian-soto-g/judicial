@@ -45,6 +45,16 @@ DATA_DIR = app_dir() / "data"
 # --- Límites --------------------------------------------------------------
 MAX_UPLOAD_BYTES = 40 * 1024 * 1024  # 40 MB
 
+# Cantidad de sesiones que se conservan en memoria a la vez. La aplicación es
+# de uso personal y se trabaja en un documento por vez, de modo que un margen
+# pequeño basta. El límite no es una economía de memoria sino una medida de
+# protección de datos: sin él, el texto de cada documento abierto durante la
+# jornada permanecería en la memoria del proceso hasta cerrar la aplicación, y
+# la promesa de que el contenido se descarta dejaría de ser cierta en la
+# práctica. Al superarse el límite se descarta la sesión usada hace más
+# tiempo.
+MAX_SESIONES_EN_MEMORIA = 3
+
 # --- Resolución de identidades -------------------------------------------
 FUZZY_HIGH = 92
 FUZZY_MEDIUM = 85

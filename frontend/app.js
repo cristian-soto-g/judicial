@@ -39,7 +39,8 @@ const estado = {
   modoVista: 'original',
   seleccion: null,
   coincidencias: [],
-  analizando: false
+  analizando: false,
+  analizado: false
 };
 
 /* ------------------------------------------------------------------ */
@@ -56,10 +57,18 @@ function escapar(texto) {
 
 /* Normalización que conserva la longitud del texto: cada carácter se sustituye
  * por su forma base en minúscula. Es indispensable para que las posiciones
- * calculadas en la búsqueda coincidan con las del documento original. */
+ * calculadas en la búsqueda coincidan con las del documento original; un solo
+ * carácter de diferencia desplazaría todos los reemplazos siguientes.
+ *
+ * El paso a minúscula se descarta cuando no produce exactamente un carácter,
+ * cosa que ocurre con algunas letras como la I con punto del turco. */
 function aplanar(texto) {
   return Array.from(texto)
-    .map((c) => (c.normalize('NFD')[0] || c).toLowerCase())
+    .map((caracter) => {
+      const base = caracter.normalize('NFD')[0] || caracter;
+      const minuscula = base.toLowerCase();
+      return Array.from(minuscula).length === 1 ? minuscula : base;
+    })
     .join('');
 }
 
@@ -143,7 +152,7 @@ function irAPaso(numero) {
     const panel = $(id);
     if (!panel) return;
     if (id === 'filaEstadisticas') {
-      panel.hidden = !visibles.has(id) || !estado.detecciones.length;
+      panel.hidden = !visibles.has(id) || !estado.analizado;
     } else {
       panel.hidden = !visibles.has(id);
     }
@@ -174,6 +183,7 @@ async function cargarArchivo(archivo) {
     estado.nombreDocumento = datos.doc_name;
     estado.detecciones = [];
     estado.grupos = [];
+    estado.analizado = false;
 
     let informe =
       `<strong>${escapar(archivo.name)}</strong> — ` +
@@ -234,6 +244,7 @@ async function analizar() {
     estado.detecciones = datos.detections;
     estado.grupos = datos.clusters;
     estado.estadisticas = datos.stats;
+    estado.analizado = true;
 
     await cargarVistaPrevia();
     dibujarEstadisticas();
@@ -502,6 +513,15 @@ async function refrescar() {
   estado.textoOriginal = datos.texto;
   estado.resaltados = datos.resaltados || [];
 
+  // Si lo que está a la vista es el texto anonimizado, hay que volver a
+  // pedirlo: de lo contrario la pantalla seguiría mostrando el resultado
+  // anterior a la edición. En una herramienta de anonimización esa
+  // discrepancia es grave, porque el usuario daría por protegido un dato que
+  // acaba de desmarcar, o al revés.
+  if (estado.modoVista === 'anonimizado') {
+    await prepararEditor();
+  }
+
   const conteos = {};
   let ocurrencias = 0;
   estado.detecciones.forEach((deteccion) => {
@@ -668,7 +688,7 @@ async function anonimizarCoincidencias() {
 /* ------------------------------------------------------------------ */
 
 async function prepararEditor() {
-  if (!estado.sessionId || !estado.detecciones.length) return;
+  if (!estado.sessionId || !estado.analizado) return;
   try {
     const datos = await pedirJson('/api/exportar/vista-previa', {
       method: 'POST',
@@ -889,7 +909,7 @@ function conectarEventos() {
   document.querySelectorAll('.paso').forEach((boton) => {
     boton.addEventListener('click', () => {
       const paso = Number(boton.dataset.paso);
-      if (paso >= 3 && !estado.detecciones.length && paso !== 5) {
+      if (paso >= 3 && !estado.analizado && paso !== 5) {
         notificar('Primero cargue y analice un documento.', 'error');
         return;
       }

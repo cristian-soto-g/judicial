@@ -23,7 +23,6 @@ from app.models.schemas import (
     ExportRequest,
 )
 from app.models.store import store
-from app.services.analyze import prune_detections
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/exportar", tags=["exportación"])
@@ -33,31 +32,41 @@ TIPO_DOCX = (
 )
 
 
-def _obtener_estado_con_detecciones(session_id: str):
+def _obtener_estado_para_exportar(session_id: str):
+    """Comprueba que el documento ya se haya analizado.
+
+    Lo que se exige es el análisis, no que haya detecciones. Un documento sin
+    datos personales es un resultado legítimo y debe poder exportarse: negarlo
+    obligaría a inventar una detección para destrabar la exportación.
+    """
     estado = store.get(session_id)
     if not estado:
         raise HTTPException(404, "La sesión expiró. Vuelva a cargar el documento.")
-    if not estado.detections:
+    if not estado.analizado:
         raise HTTPException(
-            400, "Todavía no hay detecciones. Analice el documento primero."
+            400, "Analice el documento antes de exportarlo."
         )
     return estado
 
 
 @router.post("/vista-previa", response_model=AnonymizedPreviewResponse)
 async def previsualizar(peticion: ExportRequest):
-    estado = _obtener_estado_con_detecciones(peticion.session_id)
-    detecciones = prune_detections(estado.detections, estado.doc_text)
+    """Texto anonimizado tal como quedará al exportar.
+
+    Se aplican las detecciones de la sesión sin filtrarlas de nuevo: lo que
+    muestra la tabla de revisión es exactamente lo que se reemplaza.
+    """
+    estado = _obtener_estado_para_exportar(peticion.session_id)
     return AnonymizedPreviewResponse(
         session_id=estado.session_id,
         doc_name=estado.doc_name,
-        text=anonymize_text(estado.doc_text, detecciones),
+        text=anonymize_text(estado.doc_text, estado.detections),
     )
 
 
 @router.post("/docx")
 async def exportar_docx(peticion: ExportDocumentRequest):
-    estado = _obtener_estado_con_detecciones(peticion.session_id)
+    estado = _obtener_estado_para_exportar(peticion.session_id)
     try:
         texto = resolver_texto_exportacion(estado, peticion)
         datos = build_docx_bytes(
@@ -80,7 +89,7 @@ async def exportar_docx(peticion: ExportDocumentRequest):
 
 @router.post("/pdf")
 async def exportar_pdf(peticion: ExportDocumentRequest):
-    estado = _obtener_estado_con_detecciones(peticion.session_id)
+    estado = _obtener_estado_para_exportar(peticion.session_id)
     try:
         texto = resolver_texto_exportacion(estado, peticion)
         datos = build_pdf_bytes(
@@ -103,7 +112,7 @@ async def exportar_pdf(peticion: ExportDocumentRequest):
 
 @router.post("/txt")
 async def exportar_txt(peticion: ExportDocumentRequest):
-    estado = _obtener_estado_con_detecciones(peticion.session_id)
+    estado = _obtener_estado_para_exportar(peticion.session_id)
     texto = resolver_texto_exportacion(estado, peticion)
     return Response(
         content=build_txt_bytes(texto),
@@ -119,10 +128,9 @@ async def exportar_txt(peticion: ExportDocumentRequest):
 @router.post("/csv")
 async def exportar_csv(peticion: ExportRequest):
     """Tabla de equivalencias. Contiene los datos originales sin cifrar."""
-    estado = _obtener_estado_con_detecciones(peticion.session_id)
-    detecciones = prune_detections(estado.detections, estado.doc_text)
+    estado = _obtener_estado_para_exportar(peticion.session_id)
     return Response(
-        content=build_csv_bytes(detecciones),
+        content=build_csv_bytes(estado.detections),
         media_type="text/csv; charset=utf-8",
         headers={
             "Content-Disposition": content_disposition_attachment(

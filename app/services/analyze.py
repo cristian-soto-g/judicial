@@ -86,8 +86,23 @@ def _es_subcadena_de_palabras(breve: str, extensa: str) -> bool:
     )
 
 
-def prune_detections(detections: list[Detection], texto: str) -> list[Detection]:
-    """Vuelve a aplicar los filtros y renumera las detecciones."""
+def depurar_resultado_del_analisis(
+    detections: list[Detection], texto: str
+) -> list[Detection]:
+    """Limpia el resultado automático y numera las detecciones.
+
+    Se ejecuta UNA sola vez, al terminar el análisis, y nunca después. La
+    distinción es importante y costó un defecto descubrirla: los filtros de
+    calidad existen para depurar lo que propuso el motor, no para enmendarle la
+    plana a quien revisa. Si se volvieran a aplicar al exportar, una detección
+    que el usuario reclasificó a mano podría dejar de superarlos y
+    desaparecería del documento final sin aviso alguno, mientras la tabla de
+    revisión seguiría mostrándola marcada. El usuario creería haber anonimizado
+    un dato que en realidad quedó en claro.
+
+    Desde que termina esta función, las detecciones son del usuario: la
+    exportación aplica exactamente lo que la tabla muestra.
+    """
     from app.detection.filters import is_valid_detection
 
     depuradas: list[Detection] = []
@@ -129,8 +144,9 @@ def run_full_analysis(state: SessionState) -> AnalyzeResponse:
     state.clusters = clusters
 
     detections = mentions_to_detections(mentions, state.label_mode, clusters)
-    detections = prune_detections(detections, state.doc_text)
+    detections = depurar_resultado_del_analisis(detections, state.doc_text)
     state.detections = detections
+    state.analizado = True
 
     logger.info(
         "Análisis de %s: detección %.2fs (%d menciones), agrupación %.2fs "
